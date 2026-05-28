@@ -1,0 +1,48 @@
+line_number,level,part_number,description,manufacturer,supplier,quantity,unit,cas_numbers
+1,0,PCB-001-MAIN,Main PCB 6-Layer FR4 94x58mm,Foxconn,SupplyCore,1,pcs,
+2,1,C-0402-100N,MLCC Capacitor 100nF 16V X7R,Murata,DigiKey,28,pcs,
+3,1,C-0603-10U,MLCC Capacitor 10uF 10V X5R,Samsung EM,DigiKey,12,pcs,1344-28-1
+4,1,R-0402-10K,Thick Film Resistor 10K 1% 1/16W,Yageo,Mouser,45,pcs,
+5,1,R-0402-1K,Thick Film Resistor 1K 1% 1/16W,Yageo,Mouser,22,pcs,
+6,1,IC-APQ-8016,Application Processor Snapdragon 410,Qualcomm,Arrow,1,pcs,
+7,1,IC-LPDDR3,Low Power DDR3 2GB 533MHz,Samsung,MemoryPlus,1,pcs,
+8,1,IC-EMMC-32G,eMMC Flash Memory 32GB 5.1,SanDisk,Future,1,pcs,
+9,1,IC-PM-8026,Power Management IC,Qualcomm,Arrow,1,pcs,
+10,1,IC-WCN-3660,WiFi+BT Combo 802.11ac,Qualcomm,Arrow,1,pcs,
+11,1,L-2520-2U2,Power Inductor 2.2uH 2.5A Shielded,TDK,Mouser,2,pcs,
+12,1,Q-SOT23-PMOS,P-Channel MOSFET -20V -3A,Diodes Inc,DigiKey,1,pcs,
+13,1,D-SOD323-BAT54,Schottky Diode 30V 200mA,ON Semi,DigiKey,3,pcs,
+14,1,XTAL-24M,Crystal 24MHz 10ppm 2.0x1.6mm,Epson,DigiKey,1,pcs,
+15,1,LED-0402-G,Green LED 0402 20mA,Wurth,DigiKey,2,pcs,7440-48-4
+16,1,LED-0402-R,Red LED 0402 20mA,Everlight,Mouser,1,pcs,
+17,1,CONN-USB-C,USB Type-C Receptacle 24P 0.8mm,Amphenol,TTI,1,pcs,117-81-7
+18,1,CONN-FPC-30,FPC Connector 30P 0.3mm,Hirose,Mouser,1,pcs,
+19,1,CONN-SIM-6,SIM Card Holder 6P Push-Push,Molex,DigiKey,1,pcs,
+20,1,MIC-SPK-8R,Speaker 8ohm 0.5W 15x11mm,Knowles,AudioDev,1,pcs,
+21,1,MIC-DIG-IM69D,MEMS Microphone Digital I2S,Infineon,DigiKey,2,pcs,
+22,1,SW-TACT-3x4,Tactile Switch 3x4mm 0.5N,ALPS,SwitchCo,4,pcs,
+23,1,SHIELD-EMI,Stamped EMI Shield 15x12x2mm,Laird,EMIShield,1,pcs,
+24,1,TAPE-PSA,Pressure Sensitive Adhesive Strip 5mm,3M,AdhesiveCo,1,pcs,
+25,1,BAT-LI-ION,Li-Ion Polymer Battery 3.8V 3000mAh,ATL,BatteryPlus,1,pcs,7440-02-0
+26,1,ANT-WIFI-2G4,WiFi Chip Antenna 2.4GHz 3dBi,Johanson,RFComp,1,pcs,
+27,1,FERRITE-0603,Ferrite Bead 600ohm @100MHz,Murata,DigiKey,6,pcs,
+28,1,IC-TOUCH-FTS,Capacitive Touch Controller,FTDI,Mouser,1,pcs,
+29,1,CONN-BATT-2,Battery Connector 2P 2.5mm,JST,PowerCon,1,pcs,
+30,1,THERM-NTC-10K,NTC Thermistor 10Kohm 1% 0402,Murata,DigiKey,2,pcs,
+31,1,ESD-0402-5V,TVS Diode Array 5V 4ch,ON Semi,DigiKey,2,pcs,
+32,1,CRYSTAL-32K,RTC Crystal 32.768kHz 12.5pF,NDK,DigiKey,1,pcs,
+33,1,IC-ACCEL-3D,Accelerometer LIS3DH 3-axis,ST Micro,DigiKey,1,pcs,
+34,1,IC-GYRO-3D,Gyroscope L3GD20 3-axis,ST Micro,DigiKey,1,pcs,
+35,1,CONN-AUDIO-4,3.5mm Audio Jack 4P Stereo,CUI,AudioComp,1,pcs,117-81-7
+36,1,VIBR-MOTOR,Linear Resonant Actuator 8x3.4mm,Nidec,HapticCo,1,pcs,7440-48-4
+37,1,IC-NFC-PN5180,NFC Controller + Reader Frontend,NXP,RFIDCo,1,pcs,
+38,1,CONN-MICRO-5,Micro-USB 2.0 Connector 5P,Amphenol,TTI,1,pcs,117-81-7
+39,1,FLEX-PCB-SUB,Flexible Sub-PCB for Camera Module,Fujikura,FPCCon,1,pcs,
+40,1,IC-CAM-OV5670,Camera Sensor 5MP OmniBSI+,OmniVision,CamPlus,1,pcs,
+41,1,LENS-CAM-OV,Lens Module f/2.0 28deg FOV,Largan,OpticalCo,1,pcs,
+42,1,IC-FLASH-LED,LED Flash Driver 1.5A,TorchDrv,LEDCorp,1,pcs,
+43,1,CONN-LCD-40,LCD FPC Connector 40P 0.5mm,Hirose,Mouser,1,pcs,
+44,1,DISP-LCD-5P0,IPS LCD 5.0\" 720x1280,BOE,DisplayCo,1,pcs,
+45,1,TP-GLASS-5P0,Capacitive Touch Panel 5.0\" GG,TPK,TouchPlus,1,pcs,
+46,1,FRAME-AL-6061,Aluminum Mid-Frame 6061-T6,Foxconn,MetalFab,1,pcs,
+47,1,GLASS-GOR-5P0,Gorilla Glass 3 Cover Lens 0.7mm,Corning,GlassTech,1,pcs,

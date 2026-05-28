@@ -1,0 +1,65 @@
+# Spec and agent files
+spec.md
+AGENTS.md
+
+# IDE
+.zed/
+samples_old/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+*.egg-info/
+dist/
+build/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.cache/
+*.log
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Data / artifacts
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# ML artifacts
+mlruns/
+mlartifacts/
+*.pkl
+*.joblib
+
+# Airflow
+airflow/logs/
+airflow/airflow.cfg
+airflow/webserver_config.py
+airflow/airflow.db
+
+# Monitoring
+monitoring/*.db

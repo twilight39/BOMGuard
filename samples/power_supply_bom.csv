@@ -1,0 +1,24 @@
+line_number,level,part_number,description,manufacturer,supplier,quantity,unit,cas_numbers
+1,0,PCB-002-PWR,Power Supply PCB 2-Layer FR4 80x60mm,TTM,PCBFab,1,pcs,
+2,1,IC-FLY-UC3842,Current-Mode PWM Controller,TI,DigiKey,1,pcs,
+3,1,MOSFET-IRFP460,N-Channel MOSFET 500V 20A,Infineon,Mouser,2,pcs,
+4,1,DIODE-MUR860,Ultrafast Rectifier 600V 8A,ON Semi,DigiKey,4,pcs,
+5,1,CAP-ELEC-220U,Aluminum Electrolytic Capacitor 220uF 400V,Nichicon,DigiKey,2,pcs,1344-28-1|7439-92-1
+6,1,CAP-ELEC-1000U,Aluminum Electrolytic Capacitor 1000uF 35V,Rubycon,DigiKey,2,pcs,
+7,1,CAP-FILM-0U1,Polypropylene Film Capacitor 0.1uF 630V,Kemet,Mouser,2,pcs,
+8,1,RES-WW-0R1,Wirewound Resistor 0.1ohm 5W 5%,Vishay,ResistorCo,2,pcs,
+9,1,RES-WW-10K,Wirewound Resistor 10K 2W 1%,Vishay,ResistorCo,1,pcs,
+10,1,XFRM-EI33,Switching Transformer EI33 120uH,Sumida,MagComp,1,pcs,
+11,1,CORE-FERRITE,Ferrite Core EI33 PC40 Material,TDK,MagComp,2,pcs,
+12,1,CONN-AC-IN,AC Inlet IEC 320 C14 250V 10A,Schurter,PowerCon,1,pcs,
+13,1,FUSE-5A-250V,Time-Lag Fuse 5A 250V 5x20mm,Littelfuse,DigiKey,1,pcs,
+14,1,VAR-270V,Metal Oxide Varistor 270V 7mm,EPCOS,DigiKey,1,pcs,7440-43-9
+15,1,IC-TL431,Shunt Regulator 2.5V Reference,TI,DigiKey,1,pcs,
+16,1,DIODE-1N5408,Standard Rectifier 1000V 3A,Vishay,DigiKey,2,pcs,
+17,1,LED-3MM-G,Green LED 3mm 20mA Through-Hole,Kingbright,Mouser,1,pcs,7440-48-4
+18,1,RES-CF-1M,Carbon Film Resistor 1Mohm 0.5W 5%,Yageo,DigiKey,1,pcs,
+19,1,CAP-CER-1N,Ceramic Disc Capacitor 1nF 1kV,Murata,DigiKey,2,pcs,
+20,1,CONN-DC-OUT,DC Barrel Jack 5.5x2.1mm 5A,Switchcraft,PowerCon,1,pcs,
+21,1,HEATSINK-TO220,Aluminum Heatsink TO-220 19x15x10mm,Aavid,ThermalCo,2,pcs,
+22,1,SCREW-M3-8,Pan Head Screw M3x8mm Steel Zinc,Standards,FastenerCo,4,pcs,
+23,1,WASHER-M3,Flat Washer M3 Steel Zinc,Standards,FastenerCo,4,pcs,

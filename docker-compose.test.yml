@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  test-db:
+    image: pgvector/pgvector:pg16
+    environment:
+      - POSTGRES_USER=bomguard
+      - POSTGRES_PASSWORD=bomguard
+      - POSTGRES_DB=bomguard_test
+    tmpfs:
+      - /var/lib/postgresql/data
+
+  test-redis:
+    image: redis:7-alpine
+
+  test-api:
+    build: ./backend
+    environment:
+      - DATABASE_URL=postgresql://bomguard:bomguard@test-db:5432/bomguard_test
+      - REDIS_URL=redis://test-redis:6379/1
+    depends_on:
+      - test-db
+      - test-redis
+    command: >
+      sh -c "
+        pytest tests/ -v --tb=short
+      "
