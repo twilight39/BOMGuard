@@ -1,0 +1,45 @@
+# Dev override: hot-reload backend code without rebuilding containers.
+# Docker Compose automatically merges this with docker-compose.yml.
+#
+# Usage:
+#   docker compose up -d api          # uses this override automatically
+#   docker compose -f docker-compose.yml up -d api   # ignores override
+#
+# When do you need to rebuild?
+#   - After changing pyproject.toml dependencies
+#   - Run: docker compose build api
+
+services:
+  api:
+    volumes:
+      # Mount source code for hot-reload in dev
+      - ./backend/bomguard:/app/bomguard
+      - ./backend/tests:/app/tests
+      - ./backend/alembic.ini:/app/alembic.ini
+      - ./backend/migrations:/app/migrations
+    command:
+      - uvicorn
+      - bomguard.main:create_app
+      - --factory
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "8000"
+      - --reload
+    environment:
+      # Fast reload polling interval (ms)
+      - UVICORN_RELOAD_DELAY=0.25
+
+  celery-worker:
+    volumes:
+      - ./backend/bomguard:/app/bomguard
+      - ./backend/tests:/app/tests
+      - ./backend/alembic.ini:/app/alembic.ini
+      - ./backend/migrations:/app/migrations
+
+  celery-beat:
+    volumes:
+      - ./backend/bomguard:/app/bomguard
+      - ./backend/tests:/app/tests
+      - ./backend/alembic.ini:/app/alembic.ini
+      - ./backend/migrations:/app/migrations

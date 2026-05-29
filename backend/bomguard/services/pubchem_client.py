@@ -86,7 +86,7 @@ class PubChemClient:
         props: list[dict[str, Any]] = data.get("PropertyTable", {}).get("Properties", [])
         if not props:
             return None
-        return props[0].get("IsomericSMILES")
+        return props[0].get("IsomericSMILES") or props[0].get("SMILES")
 
     @retry(
         stop=stop_after_attempt(3),
