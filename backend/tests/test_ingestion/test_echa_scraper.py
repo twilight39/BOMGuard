@@ -1,5 +1,6 @@
 """Tests for the ECHA CHEM API scraper."""
 
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -12,7 +13,7 @@ def scraper() -> ECHAChemScraper:
     return ECHAChemScraper()
 
 
-def _make_response(json_data: dict) -> MagicMock:
+def _make_response(json_data: dict[str, Any]) -> MagicMock:
     resp = MagicMock()
     resp.json.return_value = json_data
     resp.raise_for_status.return_value = None
@@ -20,7 +21,7 @@ def _make_response(json_data: dict) -> MagicMock:
 
 
 def test_fetch_all_paginates(scraper: ECHAChemScraper) -> None:
-    page1 = {
+    page1: dict[str, Any] = {
         "items": [
             {
                 "substanceName": ["Lead"],
@@ -37,7 +38,7 @@ def test_fetch_all_paginates(scraper: ECHAChemScraper) -> None:
             "totalPages": 2,
         },
     }
-    page2 = {
+    page2: dict[str, Any] = {
         "items": [
             {
                 "substanceName": ["Cadmium"],
@@ -74,7 +75,7 @@ def test_fetch_all_paginates(scraper: ECHAChemScraper) -> None:
 
 
 def test_parse_item_normalizes_dash(scraper: ECHAChemScraper) -> None:
-    item = {
+    item: dict[str, Any] = {
         "substanceName": ["Some Chemical"],
         "ecNumber": ["-"],
         "casNumber": ["-"],

@@ -9,7 +9,7 @@ from bomguard.ingestion.registry import get_all_scrapers, get_scraper
 
 
 @celery_app.task(bind=True, max_retries=3)
-def scrape_regulation(self: Any, regulation_id: str) -> dict:
+def scrape_regulation(self: Any, regulation_id: str) -> dict[str, Any]:
     """Scrape a single regulation."""
     scraper = get_scraper(regulation_id)
     if not scraper:
@@ -32,10 +32,10 @@ def scrape_regulation(self: Any, regulation_id: str) -> dict:
 
 
 @celery_app.task
-def scrape_all_regulations() -> list[dict]:
+def scrape_all_regulations() -> list[dict[str, Any]]:
     """Scrape all registered regulations."""
     scrapers = get_all_scrapers()
-    results = []
+    results: list[dict[str, Any]] = []
     for scraper in scrapers:
         db = SessionLocal()
         try:

@@ -1,6 +1,7 @@
 """SQLAlchemy models for the BOMGuard database schema."""
 
 from datetime import datetime
+from typing import Any
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
@@ -201,7 +202,7 @@ class ScanResult(Base):
     hit_type: Mapped[str | None] = mapped_column(String(50))
     risk_score: Mapped[float | None] = mapped_column(Float)
     severity: Mapped[str | None] = mapped_column(String(20))
-    details: Mapped[dict | None] = mapped_column(JSON)
+    details: Mapped[dict[str, Any] | None] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

@@ -1,6 +1,6 @@
 """Multi-regulation compliance scanner."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from bomguard.ml.features.engineering import FeatureEngineeringPipeline
@@ -20,6 +20,6 @@ class MultiRegulationScanner:
         self.models = model_registry
         self.features = feature_pipeline
 
-    async def scan_bom(self, bom_id: int) -> list[dict]:
+    async def scan_bom(self, bom_id: int) -> list[dict[str, Any]]:
         """Run compliance scan on a BOM."""
         return []

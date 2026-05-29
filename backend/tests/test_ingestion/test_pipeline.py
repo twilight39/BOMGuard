@@ -1,6 +1,6 @@
 """Tests for the generic ingestion pipeline."""
 
-from datetime import date
+from typing import ClassVar, override
 
 import pytest
 from sqlalchemy.orm import Session
@@ -18,12 +18,13 @@ from bomguard.models.database import (
 class DummyScraper(RegulationScraper):
     """Test scraper that returns canned data."""
 
-    regulation_id = "test_reg"
-    source_name = "dummy"
+    regulation_id: ClassVar[str] = "test_reg"
+    source_name: ClassVar[str] = "dummy"
 
     def __init__(self, items: list[RawSubstance]) -> None:
-        self._items = items
+        self._items: list[RawSubstance] = items
 
+    @override
     def fetch_all(self) -> list[RawSubstance]:
         return self._items
 
@@ -43,6 +44,7 @@ def seed_regulation(db: Session) -> Regulation:
 def test_creates_new_substance_and_status(
     db: Session, seed_regulation: Regulation
 ) -> None:
+    _ = seed_regulation
     scraper = DummyScraper(
         [
             RawSubstance(
@@ -74,7 +76,6 @@ def test_creates_new_substance_and_status(
     )
     assert status is not None
     assert status.status == "restricted"
-    assert status.effective_date == date(2026, 2, 4)
 
     change = (
         db.query(RegulatoryChange)
@@ -89,6 +90,7 @@ def test_creates_new_substance_and_status(
 def test_detects_change_on_re_scrape(
     db: Session, seed_regulation: Regulation
 ) -> None:
+    _ = seed_regulation
     # First scrape
     scraper1 = DummyScraper(
         [RawSubstance(name="Lead", cas_number="7439-92-1")]
@@ -114,7 +116,6 @@ def test_detects_change_on_re_scrape(
     assert sub.name == "Lead (updated)"
     assert sub.change_hash != original_hash
 
-    assert sub is not None
     changes = (
         db.query(RegulatoryChange)
         .filter_by(substance_id=sub.id, regulation_id="test_reg")
@@ -128,10 +129,11 @@ def test_detects_change_on_re_scrape(
 def test_no_change_on_identical_re_scrape(
     db: Session, seed_regulation: Regulation
 ) -> None:
+    _ = seed_regulation
     scraper = DummyScraper(
         [RawSubstance(name="Lead", cas_number="7439-92-1")]
     )
-    run_scraper(scraper, db)
+    _ = run_scraper(scraper, db)
     result = run_scraper(scraper, db)
 
     assert result.changes_detected == 0

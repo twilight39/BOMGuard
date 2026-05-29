@@ -19,6 +19,9 @@ def _ensure_test_db() -> None:
     )
     with admin_engine.connect() as conn:
         conn.execution_options(isolation_level="AUTOCOMMIT")
+        conn.execute(text("SELECT 1"))
+    with admin_engine.connect() as conn:
+        conn.execution_options(isolation_level="AUTOCOMMIT")
         result = conn.execute(
             text("SELECT 1 FROM pg_database WHERE datname = 'bomguard_test'")
         )

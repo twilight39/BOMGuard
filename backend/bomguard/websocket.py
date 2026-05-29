@@ -1,5 +1,7 @@
 """WebSocket manager for real-time updates."""
 
+from typing import Any
+
 from fastapi import WebSocket
 
 
@@ -16,7 +18,7 @@ class WebSocketManager:
     def disconnect(self, websocket: WebSocket) -> None:
         self._connections.remove(websocket)
 
-    async def broadcast(self, message: dict) -> None:
+    async def broadcast(self, message: dict[str, Any]) -> None:
         for connection in self._connections:
             await connection.send_json(message)
 

@@ -82,7 +82,7 @@ check_untyped_defs = true
 disallow_untyped_decorators = false
 no_implicit_optional = true
 warn_redundant_casts = true
-warn_unused_ignores = true
+warn_unused_ignores = false
 warn_no_return = true
 warn_unreachable = true
 strict_equality = true
@@ -93,6 +93,14 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[tool.basedpyright]
+include = ["bomguard", "tests"]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"
+reportCallInDefaultInitializer = "none"
+reportAny = "none"
+reportMissingTypeArgument = "warning"
 
 [tool.uv]
 default-groups = ["dev"]

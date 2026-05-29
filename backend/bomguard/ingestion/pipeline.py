@@ -3,6 +3,7 @@
 import hashlib
 import json
 from datetime import date, datetime
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -10,7 +11,7 @@ from bomguard.ingestion.base import IngestionResult, RawSubstance, RegulationScr
 from bomguard.models.database import RegulatoryChange, Substance, SubstanceRegulationStatus
 
 
-def _get_change_hash(raw_data: dict) -> str:
+def _get_change_hash(raw_data: dict[str, Any]) -> str:
     return hashlib.sha256(json.dumps(raw_data, sort_keys=True).encode()).hexdigest()
 
 
@@ -82,7 +83,7 @@ def run_scraper(scraper: RegulationScraper, db: Session) -> IngestionResult:
             result.substances_updated += 1
 
         # Build hashable representation of raw data
-        raw_data = {
+        raw_data: dict[str, Any] = {
             "name": raw.name,
             "cas_number": raw.cas_number,
             "ec_number": raw.ec_number,
@@ -129,6 +130,7 @@ def run_scraper(scraper: RegulationScraper, db: Session) -> IngestionResult:
         if status:
             if status.status != "restricted":
                 status.status = "restricted"
+                # SQLAlchemy Mapped fields need explicit cast for strict type checkers
                 status.effective_date = _parse_date(raw.date_added)  # type: ignore[assignment]
                 result.statuses_updated += 1
         else:

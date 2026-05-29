@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import ClassVar
 
 
 @dataclass
@@ -34,19 +35,13 @@ class RegulationScraper(ABC):
 
     To add a new regulation scraper:
     1. Subclass RegulationScraper
-    2. Implement regulation_id, source_name, and fetch_all()
-    3. Register in ingestion/registry.py
+    2. Set regulation_id and source_name class vars
+    3. Implement fetch_all()
+    4. Register in ingestion/registry.py
     """
 
-    @property
-    @abstractmethod
-    def regulation_id(self) -> str:
-        """Database ID for the regulation (e.g. 'eu_reach_svhc')."""
-
-    @property
-    @abstractmethod
-    def source_name(self) -> str:
-        """Human-readable source name (e.g. 'echa_chem_api')."""
+    regulation_id: ClassVar[str]
+    source_name: ClassVar[str]
 
     @abstractmethod
     def fetch_all(self) -> list[RawSubstance]:

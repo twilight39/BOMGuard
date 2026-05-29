@@ -1,6 +1,6 @@
 """XGBoost + Optuna training pipeline."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import xgboost as xgb
 from sklearn.calibration import CalibratedClassifierCV
@@ -15,7 +15,7 @@ def train_regulation_model(
     X: "pd.DataFrame",
     y: "pd.Series",
     dates: "pd.Series",
-) -> tuple:
+) -> tuple[Any, ...]:
     """Train XGBoost classifier for a specific regulation."""
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y

@@ -1,5 +1,7 @@
 """Multi-regulation model registry."""
 
+from typing import Any
+
 import pandas as pd
 
 
@@ -13,7 +15,7 @@ class RegulationModelRegistry:
         """Load model for a regulation."""
         return self._models.get(regulation_id)
 
-    def predict(self, regulation_id: str, feature_vector: pd.Series) -> dict:
+    def predict(self, regulation_id: str, feature_vector: pd.Series) -> dict[str, Any]:
         """Predict risk for a substance under a regulation."""
         model = self.get_model(regulation_id)
         if not model:

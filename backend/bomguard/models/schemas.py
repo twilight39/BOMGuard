@@ -1,5 +1,7 @@
 """Pydantic schemas for API request/response validation."""
 
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -63,7 +65,7 @@ class ScanResultSchema(BaseModel):
     hit_type: str | None = None
     risk_score: float | None = None
     severity: str | None = None
-    details: dict | None = None
+    details: dict[str, Any] | None = None
 
 
 class BomUploadResponse(BaseModel):

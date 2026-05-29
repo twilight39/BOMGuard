@@ -8,8 +8,7 @@ _SCRAPERS: dict[str, type[RegulationScraper]] = {}
 
 def register_scraper(scraper_cls: type[RegulationScraper]) -> None:
     """Register a scraper class."""
-    instance = scraper_cls()
-    _SCRAPERS[instance.regulation_id] = scraper_cls
+    _SCRAPERS[scraper_cls.regulation_id] = scraper_cls
 
 
 def get_scraper(regulation_id: str) -> RegulationScraper | None:

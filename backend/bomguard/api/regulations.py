@@ -1,5 +1,7 @@
 """Regulatory data endpoints."""
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -16,7 +18,8 @@ async def list_regulations(db: Session = Depends(get_db)) -> list[RegulationSche
     """List all active regulations."""
     from bomguard.models.database import Regulation
 
-    return db.query(Regulation).all()  # type: ignore[return-value]
+    regs = db.query(Regulation).all()
+    return [RegulationSchema.model_validate(r) for r in regs]
 
 
 @router.get("/{regulation_id}", response_model=RegulationSchema)
@@ -27,11 +30,11 @@ async def get_regulation(regulation_id: str, db: Session = Depends(get_db)) -> R
     reg = db.query(Regulation).filter_by(id=regulation_id).first()
     if not reg:
         raise HTTPException(status_code=404, detail="Regulation not found")
-    return reg  # type: ignore[return-value]
+    return RegulationSchema.model_validate(reg)
 
 
 @router.get("/feed")
-async def regulatory_feed(db: Session = Depends(get_db)) -> list[dict]:
+async def regulatory_feed(db: Session = Depends(get_db)) -> list[dict[str, Any]]:
     """Recent regulatory changes."""
     from bomguard.models.database import RegulatoryChange
 
@@ -49,7 +52,7 @@ async def regulatory_feed(db: Session = Depends(get_db)) -> list[dict]:
 
 
 @router.post("/{regulation_id}/refresh")
-async def refresh_regulation(regulation_id: str, db: Session = Depends(get_db)) -> dict:
+async def refresh_regulation(regulation_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
     """Manually trigger a scraper refresh for a regulation."""
     scraper = get_scraper(regulation_id)
     if not scraper:

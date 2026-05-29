@@ -1,5 +1,7 @@
 """ECHA CHEM API scraper for REACH SVHC Candidate List."""
 
+from typing import Any, ClassVar, override
+
 import httpx
 
 from bomguard.ingestion.base import RawSubstance, RegulationScraper
@@ -12,16 +14,17 @@ class ECHAChemScraper(RegulationScraper):
     https://chem.echa.europa.eu/api-obligation-list/v1/candidateList
     """
 
-    regulation_id = "eu_reach_svhc"
-    source_name = "echa_chem_api"
-    BASE_URL = "https://chem.echa.europa.eu/api-obligation-list/v1/candidateList"
+    regulation_id: ClassVar[str] = "eu_reach_svhc"
+    source_name: ClassVar[str] = "echa_chem_api"
+    BASE_URL: str = "https://chem.echa.europa.eu/api-obligation-list/v1/candidateList"
 
     def __init__(self) -> None:
-        self.client = httpx.Client(
+        self.client: httpx.Client = httpx.Client(
             timeout=30.0,
             headers={"User-Agent": "BOMGuard-OpenSource/1.0"},
         )
 
+    @override
     def fetch_all(self) -> list[RawSubstance]:
         """Fetch all SVHC entries from paginated API."""
         substances: list[RawSubstance] = []
@@ -38,9 +41,9 @@ class ECHAChemScraper(RegulationScraper):
                 },
             )
             resp.raise_for_status()
-            data = resp.json()
+            data: dict[str, Any] = resp.json()
 
-            state = data.get("state", {})
+            state: dict[str, Any] = data.get("state", {})
             total_pages = state.get("totalPages", 1)
 
             for item in data.get("items", []):
@@ -50,15 +53,15 @@ class ECHAChemScraper(RegulationScraper):
 
         return substances
 
-    def _parse_item(self, item: dict) -> RawSubstance:
-        names = item.get("substanceName", [])
-        ec_numbers = item.get("ecNumber", [])
-        cas_numbers = item.get("casNumber", [])
-        reasons = item.get("reasonForInclusion", [])
+    def _parse_item(self, item: dict[str, Any]) -> RawSubstance:
+        names: list[str] = item.get("substanceName", [])
+        ec_numbers: list[str] = item.get("ecNumber", [])
+        cas_numbers: list[str] = item.get("casNumber", [])
+        reasons: list[str] = item.get("reasonForInclusion", [])
 
-        name = names[0] if names else ""
-        ec = ec_numbers[0] if ec_numbers else None
-        cas = cas_numbers[0] if cas_numbers else None
+        name: str = names[0] if names else ""
+        ec: str | None = ec_numbers[0] if ec_numbers else None
+        cas: str | None = cas_numbers[0] if cas_numbers else None
 
         # ECHA uses "-" for missing values
         if ec == "-":
@@ -66,7 +69,7 @@ class ECHAChemScraper(RegulationScraper):
         if cas == "-":
             cas = None
 
-        reason = reasons[0] if reasons else None
+        reason: str | None = reasons[0] if reasons else None
 
         return RawSubstance(
             name=name,

@@ -1,5 +1,7 @@
 """EPA CompTox API client."""
 
+from typing import Any
+
 import httpx
 
 
@@ -14,6 +16,6 @@ class EPACompToxClient:
             headers={"User-Agent": "BOMGuard-OpenSource/1.0"},
         )
 
-    async def get_properties(self, cas_number: str) -> dict:
+    async def get_properties(self, cas_number: str) -> dict[str, Any]:
         """Fetch chemical properties by CAS number."""
         return {}
