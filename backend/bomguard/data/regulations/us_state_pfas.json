@@ -1,0 +1,113 @@
+{
+  "regulation_id": "us_state_pfas",
+  "source_name": "multi_state_pfas",
+  "source_url": "https://www.epa.gov/pfas",
+  "last_updated": "2026-05-29",
+  "substances": [
+    {
+      "name": "Perfluorooctanoic acid (PFOA)",
+      "cas_number": "335-67-1",
+      "ec_number": "206-397-9",
+      "reason_for_inclusion": "Restricted across multiple US states (ME, WA, VT, CA, MN, NY) and subject to EPA National Primary Drinking Water Regulation (4 ppt MCL, April 2024)",
+      "date_added": "2024-04-01"
+    },
+    {
+      "name": "Perfluorooctanesulfonic acid (PFOS)",
+      "cas_number": "1763-23-1",
+      "ec_number": "217-179-8",
+      "reason_for_inclusion": "Restricted across multiple US states (ME, WA, VT, CA, MN) and subject to EPA National Primary Drinking Water Regulation (4 ppt MCL, April 2024)",
+      "date_added": "2024-04-01"
+    },
+    {
+      "name": "Perfluorononanoic acid (PFNA)",
+      "cas_number": "375-95-1",
+      "ec_number": "206-801-3",
+      "reason_for_inclusion": "Restricted in New Jersey, Maine, Washington, and Vermont; EPA UCMR 5 monitored substance",
+      "date_added": "2024-04-01"
+    },
+    {
+      "name": "Perfluorohexanesulfonic acid (PFHxS)",
+      "cas_number": "355-46-4",
+      "ec_number": "206-587-1",
+      "reason_for_inclusion": "Restricted across multiple US states (ME, WA, VT, MN) and subject to EPA National Primary Drinking Water Regulation (10 ppt MCL, April 2024)",
+      "date_added": "2024-04-01"
+    },
+    {
+      "name": "HFPO-DA (GenX)",
+      "cas_number": "13252-13-6",
+      "ec_number": "236-236-8",
+      "reason_for_inclusion": "Restricted in North Carolina and Maine; subject to EPA National Primary Drinking Water Regulation (10 ppt MCL, April 2024)",
+      "date_added": "2024-04-01"
+    },
+    {
+      "name": "Perfluorobutanesulfonic acid (PFBS)",
+      "cas_number": "375-73-5",
+      "ec_number": "206-812-4",
+      "reason_for_inclusion": "Restricted in Maine and Minnesota; EPA issued Health Advisory (2000 ppt, June 2022)",
+      "date_added": "2024-04-01"
+    },
+    {
+      "name": "Perfluorodecanoic acid (PFDA)",
+      "cas_number": "335-76-2",
+      "ec_number": "206-400-3",
+      "reason_for_inclusion": "Restricted in Maine and Washington; EPA UCMR 5 monitored substance",
+      "date_added": "2024-04-01"
+    },
+    {
+      "name": "Perfluorohexanoic acid (PFHxA)",
+      "cas_number": "307-24-4",
+      "ec_number": "206-196-7",
+      "reason_for_inclusion": "Restricted in Maine, Vermont, and California; EPA UCMR 5 monitored substance",
+      "date_added": "2024-04-01"
+    },
+    {
+      "name": "Perfluoroundecanoic acid (PFUnDA)",
+      "cas_number": "2058-94-8",
+      "ec_number": "218-165-4",
+      "reason_for_inclusion": "Restricted in Maine; EPA UCMR 5 monitored substance",
+      "date_added": "2024-04-01"
+    },
+    {
+      "name": "Perfluorododecanoic acid (PFDoDA)",
+      "cas_number": "307-55-1",
+      "ec_number": "206-203-2",
+      "reason_for_inclusion": "Restricted in Maine; EPA UCMR 5 monitored substance",
+      "date_added": "2024-04-01"
+    },
+    {
+      "name": "Perfluorooctanesulfonamide (PFOSA)",
+      "cas_number": "754-91-6",
+      "ec_number": "212-046-0",
+      "reason_for_inclusion": "Restricted in Maine; EPA UCMR 5 monitored substance",
+      "date_added": "2024-04-01"
+    },
+    {
+      "name": "N-Ethyl perfluorooctanesulfonamidoacetic acid (N-EtFOSAA)",
+      "cas_number": "2991-50-6",
+      "ec_number": "221-047-5",
+      "reason_for_inclusion": "Restricted in Maine; EPA UCMR 5 monitored substance",
+      "date_added": "2024-04-01"
+    },
+    {
+      "name": "N-Methyl perfluorooctanesulfonamidoacetic acid (N-MeFOSAA)",
+      "cas_number": "2355-31-9",
+      "ec_number": "219-092-7",
+      "reason_for_inclusion": "Restricted in Maine; EPA UCMR 5 monitored substance",
+      "date_added": "2024-04-01"
+    },
+    {
+      "name": "Perfluorotridecanoic acid (PFTrDA)",
+      "cas_number": "72629-94-8",
+      "ec_number": "276-745-2",
+      "reason_for_inclusion": "Restricted in Maine; EPA UCMR 5 monitored substance",
+      "date_added": "2024-04-01"
+    },
+    {
+      "name": "Perfluorotetradecanoic acid (PFTeDA)",
+      "cas_number": "376-06-7",
+      "ec_number": "206-803-4",
+      "reason_for_inclusion": "Restricted in Maine; EPA UCMR 5 monitored substance",
+      "date_added": "2024-04-01"
+    }
+  ]
+}

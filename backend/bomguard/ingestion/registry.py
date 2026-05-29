@@ -1,7 +1,11 @@
 """Scraper registry — manual map for now, auto-discovery later."""
 
 from bomguard.ingestion.base import RegulationScraper
+from bomguard.services.cn_rohs_scraper import CnRoHSScraper
 from bomguard.services.echa_scraper import ECHAChemScraper
+from bomguard.services.rohs_scraper import EuRoHSScraper
+from bomguard.services.tsca_scraper import TSCAScraper
+from bomguard.services.us_pfas_scraper import USStatePFASScraper
 
 _SCRAPERS: dict[str, type[RegulationScraper]] = {}
 
@@ -24,3 +28,7 @@ def get_all_scrapers() -> list[RegulationScraper]:
 
 # Register built-in scrapers
 register_scraper(ECHAChemScraper)
+register_scraper(EuRoHSScraper)
+register_scraper(TSCAScraper)
+register_scraper(CnRoHSScraper)
+register_scraper(USStatePFASScraper)

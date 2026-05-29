@@ -21,6 +21,7 @@ This document records significant engineering decisions, the alternatives consid
 13. [Reverse Proxy: Traefik over Nginx](#13-reverse-proxy-traefik-over-nginx)
 14. [Frontend: Chart.js over Recharts](#14-frontend-chartjs-over-recharts)
 15. [Real-Time: WebSockets over SSE](#15-real-time-websockets-over-sse)
+16. [Data: JSON-Backed Static Lists for Regulations Without APIs](#16-data-json-backed-static-lists-for-regulations-without-apis)
 
 ---
 
@@ -282,3 +283,25 @@ def get_split_strategy(dates: pd.Series) -> tuple:
 - FastAPI has first-class WebSocket support with the same dependency injection system as HTTP endpoints.
 
 **Trade-off**: WebSockets are harder to load-balance and debug than SSE. Connection state must be managed (reconnection logic on the client). The project uses a single server, so load balancing is not a concern. Reconnection is handled by the React hook layer.
+
+---
+
+## 16. Data: JSON-Backed Static Lists for Regulations Without APIs
+
+**Decision**: Store regulation substance lists as curated JSON files under `backend/bomguard/data/regulations/` and load them via a `StaticListScraper` base class.
+
+**Regulations covered**: EU RoHS (10 substances), US TSCA Section 6(h) (5 substances), China RoHS (10 substances), US State PFAS (~15 substances).
+
+**Alternatives considered**:
+- Live web scraping of regulator HTML pages
+- Inline Python constants in scraper modules
+- YAML files
+
+**Rationale**:
+- No public REST API exists for any of these 4 regulations. The ECHA CHEM API (used for REACH SVHC) is the only regulation with a machine-readable endpoint.
+- HTML scraping is fragile and high-maintenance for pages that change once per decade. The pipeline's SHA-256 change detection would fire on every HTML layout tweak, not just substance changes.
+- Inline Python constants are simpler for tiny lists (5-10 items) but inconsistent when one regulation (PFAS) has a larger, more dynamic list. Using JSON for all 4 keeps the scraper architecture uniform.
+- JSON is natively supported by Python, diff-friendly in Git, and easy to validate independently via `scripts/validate_regulation_data.py`.
+- At under 100 substances per regulation, the file I/O overhead is negligible (~1ms per load).
+
+**Trade-off**: Manual curation requires human effort to keep lists current. Mitigation: the `last_updated` field in each JSON file makes staleness visible, and the validation script enforces data quality (CAS format, no duplicates, required fields).
