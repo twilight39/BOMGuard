@@ -14,7 +14,7 @@ import numpy as np
 # Attempt RDKit import at module level
 try:
     from rdkit import Chem  # type: ignore[import]
-    from rdkit.Chem import AllChem  # type: ignore[import]
+    from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator  # type: ignore[import]
 
     _RDKIT_AVAILABLE = True
 except Exception:
@@ -49,7 +49,8 @@ def compute_morgan_fingerprint(smiles: str, radius: int = 2, n_bits: int = 2048)
     if mol is None:
         raise ValueError(f"Invalid SMILES: {smiles}")
 
-    fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius, nBits=n_bits)  # type: ignore[attr-defined]
+    gen = GetMorganGenerator(radius=radius, fpSize=n_bits)  # type: ignore[attr-defined]
+    fp = gen.GetFingerprint(mol)
     return np.array(fp, dtype=np.float32)
 
 
