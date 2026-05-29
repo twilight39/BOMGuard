@@ -1,5 +1,6 @@
 """Pydantic schemas for API request/response validation."""
 
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
@@ -28,18 +29,6 @@ class SubstanceSchema(BaseModel):
     smiles: str | None = None
 
 
-class BomSchema(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    name: str
-    description: str | None = None
-    source_type: str = "upload"
-    file_format: str | None = None
-    total_parts: int = 0
-    compliance_status: str = "pending"
-
-
 class BomPartSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -52,6 +41,23 @@ class BomPartSchema(BaseModel):
     quantity: int = 1
     unit: str = "pcs"
     cas_numbers: str | None = None
+
+
+class BomSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    description: str | None = None
+    source_type: str = "upload"
+    file_format: str | None = None
+    total_parts: int = 0
+    compliance_status: str = "pending"
+    created_at: datetime | None = None
+
+
+class BomDetailSchema(BomSchema):
+    parts: list[BomPartSchema] = []
 
 
 class ScanResultSchema(BaseModel):
