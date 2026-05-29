@@ -1,6 +1,6 @@
 export function RegulationsPage() {
   return (
-    <div className="space-y-4">
+    <div className="p-6 space-y-6">
       <h1 className="text-2xl font-heading font-bold">Regulations</h1>
       <div className="rounded-lg border bg-card">
         <table className="w-full text-sm">

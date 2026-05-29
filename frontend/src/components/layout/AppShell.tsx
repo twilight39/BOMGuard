@@ -1,3 +1,4 @@
+import * as React from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { Outlet } from '@tanstack/react-router'
 
@@ -9,6 +10,68 @@ const navItems = [
   { to: '/ask', label: 'AI Assistant', icon: '◆' },
   { to: '/admin/ml', label: 'Admin', icon: '◊' },
 ]
+
+const segmentLabels: Record<string, string> = {
+  boms: 'BOMs',
+  regulations: 'Regulations',
+  ask: 'AI Assistant',
+  admin: 'Admin',
+  ml: 'ML Dashboard',
+  scan: 'Scan',
+  new: 'New',
+  upload: 'Upload',
+}
+
+function Breadcrumbs() {
+  const router = useRouterState()
+  const pathname = router.location.pathname
+  const segments = pathname.split('/').filter(Boolean)
+
+  if (segments.length === 0) {
+    return (
+      <span className="text-sm font-medium text-muted-foreground">Dashboard</span>
+    )
+  }
+
+  const crumbs = segments.reduce<
+    Array<{ path: string; label: string; isLast: boolean }>
+  >((acc, segment, i) => {
+    const prevPath = acc[i - 1]?.path ?? ''
+    const path = `${prevPath}/${segment}`
+    acc.push({
+      path,
+      label: segmentLabels[segment] ?? segment,
+      isLast: i === segments.length - 1,
+    })
+    return acc
+  }, [])
+
+  return (
+    <nav aria-label="breadcrumb" className="flex items-center gap-2 text-sm">
+      <Link
+        to="/"
+        className="text-muted-foreground hover:text-foreground transition-colors"
+      >
+        Dashboard
+      </Link>
+      {crumbs.map((crumb) => (
+        <React.Fragment key={crumb.path}>
+          <span className="text-muted-foreground">/</span>
+          {crumb.isLast ? (
+            <span className="font-medium text-foreground">{crumb.label}</span>
+          ) : (
+            <Link
+              to={crumb.path}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {crumb.label}
+            </Link>
+          )}
+        </React.Fragment>
+      ))}
+    </nav>
+  )
+}
 
 export function AppShell() {
   const router = useRouterState()
@@ -51,11 +114,9 @@ export function AppShell() {
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-14 border-b flex items-center justify-between px-6 bg-card">
-          <h2 className="text-sm font-medium text-muted-foreground">
-            {navItems.find((n) => currentPath === n.to || currentPath.startsWith(`${n.to}/`))?.label ?? 'Page'}
-          </h2>
+          <Breadcrumbs />
         </header>
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 overflow-auto">
           <Outlet />
         </main>
       </div>
