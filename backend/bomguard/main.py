@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from bomguard.api.admin import router as admin_router
 from bomguard.api.ask import router as ask_router
 from bomguard.api.boms import router as boms_router
+from bomguard.api.enrichment import router as enrichment_router
 from bomguard.api.regulations import router as regulations_router
 from bomguard.api.scan import router as scan_router
 from bomguard.api.substances import router as substances_router
@@ -71,6 +72,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(regulations_router)
     app.include_router(substances_router)
     app.include_router(ask_router)
+    app.include_router(enrichment_router)
     app.include_router(admin_router)
 
     @app.get("/api/health", response_model=HealthCheckResponse)

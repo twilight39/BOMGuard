@@ -1,5 +1,6 @@
 """Celery enrichment tasks."""
 
+import asyncio
 from typing import Any
 
 from bomguard.celery_app import celery_app
@@ -10,8 +11,6 @@ from bomguard.enrichment.pipeline import EnrichmentPipeline
 @celery_app.task
 def enrich_substance(substance_id: int) -> dict[str, Any]:
     """Enrich a single substance by ID."""
-    import asyncio
-
     db = SessionLocal()
     try:
         from bomguard.models.database import Substance
@@ -35,8 +34,6 @@ def enrich_substance(substance_id: int) -> dict[str, Any]:
 @celery_app.task
 def enrich_all_missing(batch_size: int = 50) -> dict[str, Any]:
     """Enrich all substances missing properties."""
-    import asyncio
-
     db = SessionLocal()
     try:
         pipeline = EnrichmentPipeline(db)
