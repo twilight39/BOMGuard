@@ -22,3 +22,6 @@ class Settings(BaseSettings):
     # WorkOS auth (planned)
     workos_api_key: str | None = None
     workos_client_id: str | None = None
+
+    # Admin API key for protected endpoints (enrich-all, retrain, etc.)
+    admin_api_key: str | None = None

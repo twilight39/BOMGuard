@@ -27,7 +27,8 @@ def mock_pubchem() -> MagicMock:
     return client
 
 
-def test_enrich_substance_creates_properties(
+@pytest.mark.asyncio
+async def test_enrich_substance_creates_properties(
     db: Session, seed_regulation: Any, mock_pubchem: MagicMock
 ) -> None:
     _ = seed_regulation
@@ -36,9 +37,7 @@ def test_enrich_substance_creates_properties(
     db.commit()
 
     pipeline = EnrichmentPipeline(db, pubchem=mock_pubchem)
-    import asyncio
-
-    props = asyncio.run(pipeline.enrich_substance(sub))
+    props = await pipeline.enrich_substance(sub)
 
     assert props.substance_id == sub.id
     assert props.has_smiles is True
@@ -53,7 +52,8 @@ def test_enrich_substance_creates_properties(
     assert fetched.has_smiles is True
 
 
-def test_enrich_substance_idempotent(
+@pytest.mark.asyncio
+async def test_enrich_substance_idempotent(
     db: Session, seed_regulation: Any, mock_pubchem: MagicMock
 ) -> None:
     _ = seed_regulation
@@ -62,17 +62,18 @@ def test_enrich_substance_idempotent(
     db.commit()
 
     pipeline = EnrichmentPipeline(db, pubchem=mock_pubchem)
-    import asyncio
-
-    _ = asyncio.run(pipeline.enrich_substance(sub))
-    _ = asyncio.run(pipeline.enrich_substance(sub))
+    _ = await pipeline.enrich_substance(sub)
+    _ = await pipeline.enrich_substance(sub)
 
     # Should still be exactly one properties row
     count = db.query(SubstanceProperties).filter_by(substance_id=sub.id).count()
     assert count == 1
 
 
-def test_enrich_all_missing_counts(db: Session, mock_pubchem: MagicMock) -> None:
+@pytest.mark.asyncio
+async def test_enrich_all_missing_counts(
+    db: Session, mock_pubchem: MagicMock
+) -> None:
     # Seed two substances
     s1 = Substance(name="Ethanol", cas_number="64-17-5")
     s2 = Substance(name="Water", cas_number="7732-18-5")
@@ -80,9 +81,7 @@ def test_enrich_all_missing_counts(db: Session, mock_pubchem: MagicMock) -> None
     db.commit()
 
     pipeline = EnrichmentPipeline(db, pubchem=mock_pubchem)
-    import asyncio
-
-    result = asyncio.run(pipeline.enrich_all_missing(batch_size=10))
+    result = await pipeline.enrich_all_missing(batch_size=10)
 
     assert result["processed"] == 2
     assert result["enriched"] == 2
@@ -92,7 +91,8 @@ def test_enrich_all_missing_counts(db: Session, mock_pubchem: MagicMock) -> None
     assert result["coverage_pct"] == 100.0
 
 
-def test_enrich_all_missing_skips_already_enriched(
+@pytest.mark.asyncio
+async def test_enrich_all_missing_skips_already_enriched(
     db: Session, mock_pubchem: MagicMock
 ) -> None:
     s1 = Substance(name="Ethanol", cas_number="64-17-5")
@@ -101,17 +101,16 @@ def test_enrich_all_missing_skips_already_enriched(
 
     # First enrichment
     pipeline = EnrichmentPipeline(db, pubchem=mock_pubchem)
-    import asyncio
-
-    _ = asyncio.run(pipeline.enrich_all_missing(batch_size=10))
+    _ = await pipeline.enrich_all_missing(batch_size=10)
 
     # Second enrichment — should find nothing to process
-    result = asyncio.run(pipeline.enrich_all_missing(batch_size=10))
+    result = await pipeline.enrich_all_missing(batch_size=10)
     assert result["processed"] == 0
     assert result["enriched"] == 0
 
 
-def test_enrich_substance_pubchem_404(
+@pytest.mark.asyncio
+async def test_enrich_substance_pubchem_404(
     db: Session, seed_regulation: Any
 ) -> None:
     _ = seed_regulation
@@ -124,9 +123,7 @@ def test_enrich_substance_pubchem_404(
     mock_client.get_properties = AsyncMock(return_value={})
 
     pipeline = EnrichmentPipeline(db, pubchem=mock_client)
-    import asyncio
-
-    props = asyncio.run(pipeline.enrich_substance(sub))
+    props = await pipeline.enrich_substance(sub)
 
     assert props.has_smiles is False
     assert sub.smiles is None

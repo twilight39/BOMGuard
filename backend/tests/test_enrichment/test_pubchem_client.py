@@ -14,6 +14,19 @@ def client() -> PubChemClient:
     return PubChemClient(max_concurrency=1)
 
 
+@pytest.mark.asyncio
+async def test_semaphore_limits_concurrency(client: PubChemClient) -> None:
+    assert client._semaphore is not None  # noqa: SLF001
+    # Semaphore should be initialized with max_concurrency=1
+    assert client._semaphore._value == 1  # noqa: SLF001
+
+
+@pytest.mark.asyncio
+async def test_zero_concurrency_disables_semaphore() -> None:
+    client = PubChemClient(max_concurrency=0)
+    assert client._semaphore is None  # noqa: SLF001
+
+
 def _make_response(json_data: dict[str, Any], status_code: int = 200) -> MagicMock:
     resp = MagicMock()
     resp.json.return_value = json_data

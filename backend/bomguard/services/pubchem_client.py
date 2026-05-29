@@ -1,5 +1,6 @@
 """PubChem PUG REST client with retries and rate limiting."""
 
+import asyncio
 from typing import Any
 from urllib.parse import quote
 
@@ -44,18 +45,23 @@ class PubChemClient:
             headers={"User-Agent": "BOMGuard-OpenSource/1.0"},
             follow_redirects=True,
         )
-        self._semaphore = httpx.AsyncClient if max_concurrency <= 0 else None
-        self._sem_count = max_concurrency
+        self._semaphore: asyncio.Semaphore | None = (
+            None if max_concurrency <= 0 else asyncio.Semaphore(max_concurrency)
+        )
 
     async def _get(self, url: str) -> dict[str, Any]:
         """Make a rate-limited GET request with retries."""
-        # Simple concurrency limit: we use a semaphore-like approach
-        # by running requests sequentially per client instance.
-        # For true async concurrency limiting we'd need asyncio.Semaphore.
-        resp = await self.client.get(url)
-        resp.raise_for_status()
-        data: dict[str, Any] = resp.json()
-        return data
+
+        async def _fetch() -> dict[str, Any]:
+            resp = await self.client.get(url)
+            resp.raise_for_status()
+            data: dict[str, Any] = resp.json()
+            return data
+
+        if self._semaphore is not None:
+            async with self._semaphore:
+                return await _fetch()
+        return await _fetch()
 
     @retry(
         stop=stop_after_attempt(3),

@@ -145,7 +145,7 @@ class EnrichmentPipeline:
         """Compute Morgan fingerprints and PCA(50) for a batch of substances.
 
         Only processes substances that have valid SMILES.
-        Skips PCA fitting if the batch is too small (< 50 substances).
+        Skips PCA fitting if the batch is too small (< 10 substances).
         """
         from bomguard.enrichment.fingerprints import load_pca_model
 
@@ -157,7 +157,7 @@ class EnrichmentPipeline:
                 smiles_list.append(sub.smiles)
                 substance_map.append(sub)
 
-        if len(smiles_list) < 50:
+        if len(smiles_list) < 10:
             # Not enough samples to fit PCA; skip for now.
             # They will be re-processed in a future larger batch.
             return
