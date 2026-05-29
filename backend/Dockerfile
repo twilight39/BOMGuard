@@ -16,6 +16,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 # Copy dependency files
 COPY pyproject.toml ./
+COPY README.md ./
 
 # Install dependencies
 RUN uv sync --no-install-project
@@ -23,6 +24,8 @@ RUN uv sync --no-install-project
 # Copy application code
 COPY bomguard/ ./bomguard/
 COPY tests/ ./tests/
+COPY alembic.ini ./
+COPY migrations/ ./migrations/
 
 # Install project
 RUN uv sync
