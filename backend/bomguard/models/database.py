@@ -229,9 +229,6 @@ class RegulatorySummary(Base):
         "Regulation", back_populates="summaries"
     )
 
-    __table_args__ = (
-        {"postgresql_using": "ivfflat"},
-    )
 
 
 class MLModelPerformance(Base):

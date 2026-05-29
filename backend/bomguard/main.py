@@ -24,10 +24,26 @@ def run_migrations() -> None:
     command.upgrade(alembic_cfg, "head")
 
 
+def seed_regulations_if_empty() -> None:
+    """Seed regulation definitions if the table is empty."""
+    from bomguard.db import SessionLocal
+    from bomguard.models.database import Regulation
+    from bomguard.seed import seed_regulations
+
+    db = SessionLocal()
+    try:
+        count = db.query(Regulation).count()
+        if count == 0:
+            seed_regulations(db)
+    finally:
+        db.close()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Application lifespan events."""
     run_migrations()
+    seed_regulations_if_empty()
     yield
 
 

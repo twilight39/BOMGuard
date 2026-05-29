@@ -1,57 +1,77 @@
-"""ECHA REACH SVHC web scraper."""
+"""ECHA CHEM API scraper for REACH SVHC Candidate List."""
 
-import hashlib
-import random
-import time
+import httpx
 
-import requests
-from bs4 import BeautifulSoup
+from bomguard.ingestion.base import RawSubstance, RegulationScraper
 
 
-class ECHAScraper:
-    """Scraper for ECHA REACH SVHC Candidate List."""
+class ECHAChemScraper(RegulationScraper):
+    """Scraper for EU REACH SVHC Candidate List via ECHA CHEM API.
 
-    SOURCE_ID = "echa_reach"
-    CANDIDATE_LIST_URL = "https://echa.europa.eu/candidate-list-table"
+    Uses the internal ECHA CHEM obligation-list API:
+    https://chem.echa.europa.eu/api-obligation-list/v1/candidateList
+    """
+
+    regulation_id = "eu_reach_svhc"
+    source_name = "echa_chem_api"
+    BASE_URL = "https://chem.echa.europa.eu/api-obligation-list/v1/candidateList"
 
     def __init__(self) -> None:
-        self.session = requests.Session()
-        self.session.headers.update({
-            "User-Agent": "BOMGuard-OpenSource/1.0"
-        })
+        self.client = httpx.Client(
+            timeout=30.0,
+            headers={"User-Agent": "BOMGuard-OpenSource/1.0"},
+        )
 
-    def fetch_all(self) -> list[dict]:
-        """Fetch all SVHC entries from paginated table."""
-        substances = []
-        for page in range(1, 7):
-            resp = self._backoff_request(
-                f"{self.CANDIDATE_LIST_URL}?p_p_id=disssimplesearch_WAR_disssearchportlet"
-                f"&_disssimplesearch_WAR_disssearchportlet_formDate=1234567890"
-                f"&_disssimplesearch_WAR_disssearchportlet_sspState=normal"
-                f"&_disssimplesearch_WAR_disssearchportlet_cur={page}"
+    def fetch_all(self) -> list[RawSubstance]:
+        """Fetch all SVHC entries from paginated API."""
+        substances: list[RawSubstance] = []
+        page = 1
+        total_pages = 1
+
+        while page <= total_pages:
+            resp = self.client.get(
+                self.BASE_URL,
+                params={
+                    "pageIndex": page,
+                    "pageSize": 100,
+                    "showMembers": "false",
+                },
             )
-            soup = BeautifulSoup(resp.text, "html.parser")
-            rows = soup.select("table tbody tr")
-            for row in rows:
-                cells = row.find_all("td")
-                if len(cells) >= 4:
-                    substances.append({
-                        "name": cells[0].text.strip(),
-                        "ec_number": cells[1].text.strip() if cells[1].text.strip() != "-" else None,
-                        "cas_number": cells[2].text.strip() if cells[2].text.strip() != "-" else None,
-                        "date_added": cells[3].text.strip(),
-                    })
+            resp.raise_for_status()
+            data = resp.json()
+
+            state = data.get("state", {})
+            total_pages = state.get("totalPages", 1)
+
+            for item in data.get("items", []):
+                substances.append(self._parse_item(item))
+
+            page += 1
+
         return substances
 
-    def get_change_hash(self, raw_html: str) -> str:
-        return hashlib.sha256(raw_html.encode()).hexdigest()
+    def _parse_item(self, item: dict) -> RawSubstance:
+        names = item.get("substanceName", [])
+        ec_numbers = item.get("ecNumber", [])
+        cas_numbers = item.get("casNumber", [])
+        reasons = item.get("reasonForInclusion", [])
 
-    def _backoff_request(self, url: str, max_retries: int = 3) -> requests.Response:
-        for attempt in range(max_retries):
-            try:
-                resp = self.session.get(url, timeout=30)
-                resp.raise_for_status()
-                return resp
-            except requests.RequestException:
-                time.sleep(2 ** attempt + random.uniform(0, 1))
-        raise RuntimeError(f"Failed to fetch {url} after {max_retries} retries")
+        name = names[0] if names else ""
+        ec = ec_numbers[0] if ec_numbers else None
+        cas = cas_numbers[0] if cas_numbers else None
+
+        # ECHA uses "-" for missing values
+        if ec == "-":
+            ec = None
+        if cas == "-":
+            cas = None
+
+        reason = reasons[0] if reasons else None
+
+        return RawSubstance(
+            name=name,
+            cas_number=cas,
+            ec_number=ec,
+            reason_for_inclusion=reason,
+            date_added=item.get("dateOfInclusion"),
+        )
