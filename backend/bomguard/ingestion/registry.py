@@ -2,6 +2,8 @@
 
 from bomguard.ingestion.base import RegulationScraper
 from bomguard.services.echa_scraper import ECHAChemScraper
+from bomguard.services.rohs_scraper import RoHSScraper
+from bomguard.services.tsca_scraper import TSCAScraper
 
 _SCRAPERS: dict[str, type[RegulationScraper]] = {}
 
@@ -24,3 +26,5 @@ def get_all_scrapers() -> list[RegulationScraper]:
 
 # Register built-in scrapers
 register_scraper(ECHAChemScraper)
+register_scraper(RoHSScraper)
+register_scraper(TSCAScraper)
