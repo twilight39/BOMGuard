@@ -1,0 +1,43 @@
+{
+  "regulation_id": "us_tsca_6h",
+  "source_name": "epa_tsca_6h",
+  "source_url": "https://www.epa.gov/assessing-and-managing-chemicals-under-tsca/persistent-bioaccumulative-and-toxic-pbt-chemicals-under",
+  "last_updated": "2026-05-29",
+  "substances": [
+    {
+      "name": "Decabromodiphenyl ether (DecaBDE)",
+      "cas_number": "1163-19-5",
+      "ec_number": null,
+      "reason_for_inclusion": "Restricted under TSCA Section 6(h) PBT rule (86 Fed. Reg. 880, Jan 2021); prohibited for manufacture, processing, and distribution in commerce with certain exemptions and phase-outs",
+      "date_added": "2021-03-08"
+    },
+    {
+      "name": "Phenol, isopropylated phosphate (3:1) (PIP 3:1)",
+      "cas_number": "68937-41-7",
+      "ec_number": null,
+      "reason_for_inclusion": "Restricted under TSCA Section 6(h) PBT rule (86 Fed. Reg. 894, Jan 2021); prohibited for processing and distribution in commerce with certain exemptions and phase-outs",
+      "date_added": "2021-03-08"
+    },
+    {
+      "name": "2,4,6-Tris(tert-butyl)phenol (2,4,6-TTBP)",
+      "cas_number": "732-26-3",
+      "ec_number": null,
+      "reason_for_inclusion": "Restricted under TSCA Section 6(h) PBT rule (86 Fed. Reg. 866, Jan 2021); prohibited distribution in containers < 35 gallons at concentrations > 0.3% by weight",
+      "date_added": "2021-03-08"
+    },
+    {
+      "name": "Hexachlorobutadiene (HCBD)",
+      "cas_number": "87-68-3",
+      "ec_number": null,
+      "reason_for_inclusion": "Restricted under TSCA Section 6(h) PBT rule (86 Fed. Reg. 922, Jan 2021); prohibited manufacturing, processing, and distribution except as unintentional byproduct",
+      "date_added": "2021-03-08"
+    },
+    {
+      "name": "Pentachlorothiophenol (PCTP)",
+      "cas_number": "133-49-3",
+      "ec_number": null,
+      "reason_for_inclusion": "Restricted under TSCA Section 6(h) PBT rule (86 Fed. Reg. 911, Jan 2021); prohibited unless concentrations are at or below 1% by weight",
+      "date_added": "2021-03-08"
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "regulation_id": "cn_rohs",
+  "source_name": "miit_cn_rohs",
+  "source_url": "https://www.samr.gov.cn/",
+  "last_updated": "2026-05-29",
+  "substances": [
+    {
+      "name": "Lead",
+      "cas_number": "7439-92-1",
+      "ec_number": "231-100-4",
+      "reason_for_inclusion": "Restricted under China RoHS GB 26572-2025; maximum concentration 0.1% by weight in homogeneous materials",
+      "date_added": "2016-07-01"
+    },
+    {
+      "name": "Mercury",
+      "cas_number": "7439-97-6",
+      "ec_number": "231-106-7",
+      "reason_for_inclusion": "Restricted under China RoHS GB 26572-2025; maximum concentration 0.1% by weight in homogeneous materials",
+      "date_added": "2016-07-01"
+    },
+    {
+      "name": "Cadmium",
+      "cas_number": "7440-43-9",
+      "ec_number": "231-152-8",
+      "reason_for_inclusion": "Restricted under China RoHS GB 26572-2025; maximum concentration 0.01% by weight in homogeneous materials",
+      "date_added": "2016-07-01"
+    },
+    {
+      "name": "Hexavalent chromium",
+      "cas_number": "18540-29-9",
+      "ec_number": null,
+      "reason_for_inclusion": "Restricted under China RoHS GB 26572-2025; maximum concentration 0.1% by weight in homogeneous materials",
+      "date_added": "2016-07-01"
+    },
+    {
+      "name": "Polybrominated biphenyls (PBB)",
+      "cas_number": "59536-65-1",
+      "ec_number": null,
+      "reason_for_inclusion": "Restricted under China RoHS GB 26572-2025; maximum concentration 0.1% by weight in homogeneous materials",
+      "date_added": "2016-07-01"
+    },
+    {
+      "name": "Polybrominated diphenyl ethers (PBDE)",
+      "cas_number": "63936-56-1",
+      "ec_number": null,
+      "reason_for_inclusion": "Restricted under China RoHS GB 26572-2025; maximum concentration 0.1% by weight in homogeneous materials",
+      "date_added": "2016-07-01"
+    },
+    {
+      "name": "Bis(2-ethylhexyl) phthalate (DEHP)",
+      "cas_number": "117-81-7",
+      "ec_number": "204-211-0",
+      "reason_for_inclusion": "Restricted under China RoHS GB 26572-2025 (Amendment 1 to GB/T 26572-2011); maximum concentration 0.1% by weight in homogeneous materials",
+      "date_added": "2026-01-01"
+    },
+    {
+      "name": "Butyl benzyl phthalate (BBP)",
+      "cas_number": "85-68-7",
+      "ec_number": "201-622-7",
+      "reason_for_inclusion": "Restricted under China RoHS GB 26572-2025 (Amendment 1 to GB/T 26572-2011); maximum concentration 0.1% by weight in homogeneous materials",
+      "date_added": "2026-01-01"
+    },
+    {
+      "name": "Dibutyl phthalate (DBP)",
+      "cas_number": "84-74-2",
+      "ec_number": "201-557-4",
+      "reason_for_inclusion": "Restricted under China RoHS GB 26572-2025 (Amendment 1 to GB/T 26572-2011); maximum concentration 0.1% by weight in homogeneous materials",
+      "date_added": "2026-01-01"
+    },
+    {
+      "name": "Diisobutyl phthalate (DIBP)",
+      "cas_number": "84-69-5",
+      "ec_number": "201-553-2",
+      "reason_for_inclusion": "Restricted under China RoHS GB 26572-2025 (Amendment 1 to GB/T 26572-2011); maximum concentration 0.1% by weight in homogeneous materials",
+      "date_added": "2026-01-01"
+    }
+  ]
+}
