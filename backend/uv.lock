@@ -296,6 +296,7 @@ dependencies = [
     { name = "shap", version = "0.52.0", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine != 'x86_64' or sys_platform != 'darwin'" },
     { name = "sqlalchemy" },
     { name = "uvicorn", extra = ["standard"] },
+    { name = "workos" },
     { name = "xgboost" },
 ]
 
@@ -335,6 +336,7 @@ requires-dist = [
     { name = "shap", specifier = ">=0.46.0" },
     { name = "sqlalchemy", specifier = ">=2.0.36" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32.0" },
+    { name = "workos", specifier = ">=5.0.0" },
     { name = "xgboost", specifier = ">=2.1.0" },
 ]
 
@@ -3169,6 +3171,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pyjwt"
+version = "2.13.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/3b/81/58d0ac84e1ef3a3843791d6954d94c0b33d526c75eeb1efbce9d0a4c4077/pyjwt-2.13.0.tar.gz", hash = "sha256:41571c89ca91598c79e8ef18a2d07367d4810fbbd6f637794879baf1b7703423", size = 107515, upload-time = "2026-05-21T19:54:36.618Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a3/5e/ecf12fdb62546d64385c158514e9b2b671f7832108ef2ecd2020ce0af2d1/pyjwt-2.13.0-py3-none-any.whl", hash = "sha256:66adcc2aff09b3f1bbd95fc1e1577df8ac8723c978552fd43304c8a290ac5728", size = 31274, upload-time = "2026-05-21T19:54:35.362Z" },
+]
+
+[[package]]
 name = "pyparsing"
 version = "3.3.2"
 source = { registry = "https://pypi.org/simple" }
@@ -4402,6 +4413,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/dd/b2/381be8cfdee792dd117872481b6e378f85c957dd7c5bca38897b08f765fd/werkzeug-3.1.8.tar.gz", hash = "sha256:9bad61a4268dac112f1c5cd4630a56ede601b6ed420300677a869083d70a4c44", size = 875852, upload-time = "2026-04-02T18:49:14.268Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/93/8c/2e650f2afeb7ee576912636c23ddb621c91ac6a98e66dc8d29c3c69446e1/werkzeug-3.1.8-py3-none-any.whl", hash = "sha256:63a77fb8892bf28ebc3178683445222aa500e48ebad5ec77b0ad80f8726b1f50", size = 226459, upload-time = "2026-04-02T18:49:12.72Z" },
+]
+
+[[package]]
+name = "workos"
+version = "7.0.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cryptography" },
+    { name = "httpx" },
+    { name = "pyjwt" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/71/ec/12df7e3c81f010241347af19c9f5c20ddc8ac3ca03a77cc0ed156541dfd4/workos-7.0.1.tar.gz", hash = "sha256:ad3aa1951a4c6115271c73da6e78e6a1231e63046728dc7f65860f629b84a832", size = 187562, upload-time = "2026-05-11T16:52:40.336Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/47/86/3cb202cf62ca49975ee83e7afbad44c7b69917070f447fb1242080180933/workos-7.0.1-py3-none-any.whl", hash = "sha256:5f6a34d43cc14f365259228fcd7a6fcc808a2f71f94f84b3019cf25e9e299167", size = 545446, upload-time = "2026-05-11T16:52:41.903Z" },
 ]
 
 [[package]]

@@ -1,6 +1,8 @@
 import * as React from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { Outlet } from '@tanstack/react-router'
+import { Button } from '@/components/ui/button'
+import { useAuth } from '@/contexts/AuthContext'
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: '◈' },
@@ -73,6 +75,30 @@ function Breadcrumbs() {
   )
 }
 
+function UserSection() {
+  const { user, isLoading, login, logout } = useAuth()
+
+  return (
+    <div className="p-4 border-t space-y-3">
+      {isLoading ? (
+        <div className="text-xs text-muted-foreground">Loading…</div>
+      ) : user ? (
+        <div className="space-y-2">
+          <div className="text-sm font-medium truncate">{user.name || user.email}</div>
+          <div className="text-xs text-muted-foreground truncate">{user.email}</div>
+          <Button variant="ghost" size="sm" className="w-full" onClick={logout}>
+            Logout
+          </Button>
+        </div>
+      ) : (
+        <Button variant="outline" size="sm" className="w-full" onClick={login}>
+          Sign in with Google
+        </Button>
+      )}
+    </div>
+  )
+}
+
 export function AppShell() {
   const router = useRouterState()
   const currentPath = router.location.pathname
@@ -106,9 +132,7 @@ export function AppShell() {
             )
           })}
         </nav>
-        <div className="p-4 border-t text-xs text-muted-foreground">
-          v0.1.0 · feat/frontend-shell
-        </div>
+        <UserSection />
       </aside>
 
       {/* Main */}

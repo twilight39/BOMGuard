@@ -7,9 +7,11 @@ from alembic import command
 from alembic.config import Config
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
 from bomguard.api.admin import router as admin_router
 from bomguard.api.ask import router as ask_router
+from bomguard.api.auth import router as auth_router
 from bomguard.api.boms import router as boms_router
 from bomguard.api.regulations import router as regulations_router
 from bomguard.api.scan import router as scan_router
@@ -66,6 +68,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_headers=["*"],
     )
 
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=settings.secret_key,
+        max_age=604800,  # 7 days
+        same_site="lax",
+        https_only=False,
+    )
+
+    app.include_router(auth_router)
     app.include_router(boms_router)
     app.include_router(scan_router)
     app.include_router(regulations_router)

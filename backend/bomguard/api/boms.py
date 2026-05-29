@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, UploadFile
+from fastapi import APIRouter, Depends, Request, UploadFile
 from sqlalchemy.orm import Session
 
 from bomguard.db import get_db
@@ -12,10 +12,17 @@ router = APIRouter(prefix="/api/boms", tags=["BOMs"])
 
 
 @router.post("/upload", response_model=BomUploadResponse)
-async def upload_bom(file: UploadFile, db: Session = Depends(get_db)) -> BomUploadResponse:
+async def upload_bom(
+    file: UploadFile,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> BomUploadResponse:
     """Upload a BOM file (CSV or XLSX)."""
     _ = db
-    return BomUploadResponse(id=1, filename=file.filename or "unknown", status="pending")
+    user_id = request.session.get("user_id")
+    return BomUploadResponse(
+        id=1, filename=file.filename or "unknown", status="pending", user_id=user_id
+    )
 
 
 @router.get("/", response_model=list[BomSchema])
