@@ -4,6 +4,7 @@ import mimetypes
 import os
 import secrets
 import time
+import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
@@ -188,12 +189,19 @@ async def upload_avatar(
         raise HTTPException(status_code=400, detail="File must be an image")
 
     ext = mimetypes.guess_extension(content_type) or ".png"
-    filename = f"{user_id}{ext}"
+    filename = f"{uuid.uuid4().hex}{ext}"
     filepath = os.path.join(AVATARS_DIR, filename)
 
     contents = await file.read()
     if len(contents) > 2 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Image must be under 2MB")
+
+    # Remove old avatar file if it exists
+    if user.avatar_url:
+        old_filename = os.path.basename(user.avatar_url.split("?")[0])
+        old_path = os.path.join(AVATARS_DIR, old_filename)
+        if os.path.isfile(old_path):
+            os.remove(old_path)
 
     with open(filepath, "wb") as f:
         f.write(contents)
