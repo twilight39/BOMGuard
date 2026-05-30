@@ -94,6 +94,16 @@ export async function deleteBom(id: number): Promise<{ id: number; deleted: bool
   return handleResponse<{ id: number; deleted: boolean }>(res)
 }
 
+export async function loadSample(sampleId: string): Promise<Bom> {
+  const res = await apiFetch(`/api/boms/samples/${sampleId}`, { method: 'POST' })
+  return handleResponse<Bom>(res)
+}
+
+export async function fetchSampleList(): Promise<Array<{ id: string; name: string; filename: string }>> {
+  const res = await apiFetch('/api/boms/samples')
+  return handleResponse(res)
+}
+
 export async function triggerScan(bomId: number): Promise<{ bom_id: number; status: string }> {
   const res = await apiFetch(`/api/scan/${bomId}`, { method: 'POST' })
   return handleResponse<{ bom_id: number; status: string }>(res)

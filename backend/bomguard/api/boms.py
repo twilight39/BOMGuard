@@ -13,6 +13,7 @@ from bomguard.models.schemas import (
     BomUploadResponse,
 )
 from bomguard.services.bom_parser import parse_bom
+from bomguard.seed import SAMPLE_MAP, load_sample_bom
 
 router = APIRouter(prefix="/api/boms", tags=["BOMs"])
 
@@ -66,6 +67,34 @@ async def upload_bom(
     db.commit()
 
     return BomUploadResponse(id=bom.id, filename=file.filename, status="pending")
+
+
+@router.post("/samples/{sample_id}", response_model=BomSchema)
+async def load_sample(
+    sample_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> BomSchema:
+    """Load a pre-built sample BOM into the current user's account."""
+    if sample_id not in SAMPLE_MAP:
+        raise HTTPException(status_code=404, detail=f"Unknown sample: {sample_id}")
+
+    user_id = request.session.get("user_id")
+    try:
+        bom = load_sample_bom(db, sample_id, user_id=user_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    return BomSchema.model_validate(bom)
+
+
+@router.get("/samples", response_model=list[dict[str, str]])
+async def list_samples() -> list[dict[str, str]]:
+    """List available sample BOMs."""
+    return [
+        {"id": sid, "name": name, "filename": filename}
+        for sid, (filename, name) in SAMPLE_MAP.items()
+    ]
 
 
 @router.get("/", response_model=list[BomSchema])

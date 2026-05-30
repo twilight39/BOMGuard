@@ -78,48 +78,77 @@ SAMPLE_BOMS = [
 ]
 
 
+SAMPLE_MAP: dict[str, tuple[str, str]] = {
+    "iot_sensor": ("iot_sensor_bom.csv", "IoT Sensor BOM"),
+    "power_supply": ("power_supply_bom.csv", "Power Supply BOM"),
+    "smartphone_pcb": ("smartphone_pcb_bom.csv", "Smartphone PCB BOM"),
+}
+
+
+def load_sample_bom(db: Session, sample_id: str, user_id: str | None = None) -> Bom:
+    """Load a single sample BOM file into the database.
+
+    Args:
+        db: Database session.
+        sample_id: Key from SAMPLE_MAP (e.g. "iot_sensor").
+        user_id: Optional user ID to assign ownership.
+
+    Returns:
+        The created Bom instance.
+
+    Raises:
+        ValueError: If sample_id is unknown or file cannot be parsed.
+    """
+    if sample_id not in SAMPLE_MAP:
+        raise ValueError(f"Unknown sample: {sample_id}")
+
+    filename, display_name = SAMPLE_MAP[sample_id]
+    filepath = SAMPLE_DIR / filename
+    if not filepath.exists():
+        raise ValueError(f"Sample file not found: {filepath}")
+
+    with open(filepath, "rb") as f:
+        contents = f.read()
+
+    parts = parse_bom(contents, filename)
+
+    bom = Bom(
+        name=display_name,
+        source_type="sample",
+        file_format=filename.rsplit(".", 1)[-1].lower(),
+        total_parts=len(parts),
+        compliance_status="pending",
+        user_id=user_id,
+    )
+    db.add(bom)
+    db.flush()
+
+    for parsed in parts:
+        bom_part = BomPart(
+            bom_id=bom.id,
+            line_number=parsed.line_number,
+            part_number=parsed.part_number,
+            description=parsed.description,
+            manufacturer=parsed.manufacturer,
+            supplier=parsed.supplier,
+            quantity=parsed.quantity,
+            unit=parsed.unit or "pcs",
+            cas_numbers=parsed.cas_numbers,
+        )
+        db.add(bom_part)
+
+    db.commit()
+    return bom
+
+
 def seed_sample_boms(db: Session) -> None:
     """Seed sample BOMs from /samples if none exist."""
     existing = db.query(Bom).filter(Bom.source_type == "sample").first()
     if existing:
         return
 
-    for filename, display_name in SAMPLE_BOMS:
-        filepath = SAMPLE_DIR / filename
-        if not filepath.exists():
-            continue
-
-        with open(filepath, "rb") as f:
-            contents = f.read()
-
+    for sample_id, _ in SAMPLE_MAP.items():
         try:
-            parts = parse_bom(contents, filename)
+            load_sample_bom(db, sample_id, user_id=None)
         except ValueError:
             continue
-
-        bom = Bom(
-            name=display_name,
-            source_type="sample",
-            file_format=filename.rsplit(".", 1)[-1].lower(),
-            total_parts=len(parts),
-            compliance_status="pending",
-            user_id=None,
-        )
-        db.add(bom)
-        db.flush()
-
-        for parsed in parts:
-            bom_part = BomPart(
-                bom_id=bom.id,
-                line_number=parsed.line_number,
-                part_number=parsed.part_number,
-                description=parsed.description,
-                manufacturer=parsed.manufacturer,
-                supplier=parsed.supplier,
-                quantity=parsed.quantity,
-                unit=parsed.unit or "pcs",
-                cas_numbers=parsed.cas_numbers,
-            )
-            db.add(bom_part)
-
-    db.commit()
