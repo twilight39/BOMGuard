@@ -46,6 +46,7 @@ Thumbs.db
 # Data / artifacts
 data/
 !backend/bomguard/data/regulations/
+static/avatars/
 *.db
 *.sqlite
 *.sqlite3
