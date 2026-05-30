@@ -77,8 +77,8 @@ export function BomsPage() {
       headerName: 'Status',
       field: 'complianceStatus',
       width: 120,
-      valueFormatter: (p: { value: string }) => p.value,
-      cellClass: (p: { value: string }) =>
+      valueFormatter: (p) => p.value,
+      cellClass: (p) =>
         p.value === 'flagged'
           ? 'text-destructive font-medium'
           : p.value === 'clean'
@@ -91,7 +91,7 @@ export function BomsPage() {
       headerName: 'Created',
       field: 'createdAt',
       width: 160,
-      valueFormatter: (p: { value: string | null }) =>
+      valueFormatter: (p) =>
         p.value ? new Date(p.value).toLocaleString() : '-',
     },
   ]

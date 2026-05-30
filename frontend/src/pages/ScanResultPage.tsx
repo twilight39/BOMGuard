@@ -86,15 +86,15 @@ export function ScanResultPage() {
       headerName: 'Regulation',
       field: 'regulationId',
       flex: 2,
-      valueFormatter: (p: { data: ScanResult; value: string | null }) =>
+      valueFormatter: (p) =>
         p.data.hitType === 'unknown_cas' ? '—' : (p.value || '—'),
     },
     {
       headerName: 'Severity',
       field: 'severity',
       width: 120,
-      valueFormatter: (p: { value: string }) => p.value,
-      cellClass: (p: { value: string }) =>
+      valueFormatter: (p) => p.value,
+      cellClass: (p) =>
         p.value === 'critical'
           ? 'text-destructive font-semibold'
           : p.value === 'high'
@@ -109,14 +109,14 @@ export function ScanResultPage() {
       headerName: 'Risk Score',
       field: 'riskScore',
       width: 120,
-      valueFormatter: (p: { value: number | null }) => (p.value != null ? p.value.toFixed(2) : '-'),
+      valueFormatter: (p) => (p.value != null ? p.value.toFixed(2) : '-'),
     },
     {
       headerName: 'Hit Type',
       field: 'hitType',
       width: 160,
-      valueFormatter: (p: { value: string }) => p.value?.replace(/_/g, ' ') || '—',
-      cellClass: (p: { value: string }) =>
+      valueFormatter: (p) => p.value?.replace(/_/g, ' ') || '—',
+      cellClass: (p) =>
         p.value === 'unknown_cas' ? 'text-yellow-600 dark:text-yellow-400 italic' : '',
     },
   ]

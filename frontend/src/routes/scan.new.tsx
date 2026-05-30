@@ -40,8 +40,8 @@ function ScanNewPage() {
       headerName: 'Status',
       field: 'complianceStatus',
       width: 120,
-      valueFormatter: (p: { value: string }) => p.value,
-      cellClass: (p: { value: string }) =>
+      valueFormatter: (p) => p.value,
+      cellClass: (p) =>
         p.value === 'flagged'
           ? 'text-destructive font-medium'
           : p.value === 'clean'
