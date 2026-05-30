@@ -41,7 +41,7 @@ export function BomDetailPage() {
     try {
       const [bomData, resultData] = await Promise.all([
         fetchBom(id),
-        fetchScanResults(id).catch(() => ({ results: [] })),
+        fetchScanResults(id).catch(() => ({ bomId: id, status: 'pending', results: [] as ScanResult[] })),
       ])
       setBom(bomData)
       setScanResults(resultData.results)
@@ -103,19 +103,19 @@ export function BomDetailPage() {
   }
 
   const partColumns: ColDef<BomPart>[] = [
-    { headerName: 'Line', field: 'lineNumber' as const, width: 80 },
-    { headerName: 'Part Number', field: 'partNumber' as const, flex: 2 },
-    { headerName: 'Description', field: 'description' as const, flex: 2 },
-    { headerName: 'Manufacturer', field: 'manufacturer' as const, flex: 1 },
-    { headerName: 'Supplier', field: 'supplier' as const, flex: 1 },
-    { headerName: 'CAS', field: 'casNumbers' as const, flex: 1 },
-    { headerName: 'Qty', field: 'quantity' as const, width: 90 },
-    { headerName: 'Unit', field: 'unit' as const, width: 90 },
+    { headerName: 'Line', field: 'lineNumber', width: 80 },
+    { headerName: 'Part Number', field: 'partNumber', flex: 2 },
+    { headerName: 'Description', field: 'description', flex: 2 },
+    { headerName: 'Manufacturer', field: 'manufacturer', flex: 1 },
+    { headerName: 'Supplier', field: 'supplier', flex: 1 },
+    { headerName: 'CAS', field: 'casNumbers', flex: 1 },
+    { headerName: 'Qty', field: 'quantity', width: 90 },
+    { headerName: 'Unit', field: 'unit', width: 90 },
   ]
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col h-full p-6 gap-4">
+      <div className="flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-2xl font-heading font-bold">{bom.name}</h1>
           <p className="text-muted-foreground text-sm mt-1">
@@ -154,7 +154,7 @@ export function BomDetailPage() {
       </div>
 
       {scanResults.length > 0 && (
-        <div className="rounded-lg border bg-card p-4 space-y-3">
+        <div className="rounded-lg border bg-card p-4 space-y-3 shrink-0">
           <div className="flex items-center justify-between">
             <h2 className="font-medium text-sm">Latest Scan Summary</h2>
             <Button variant="ghost" size="sm" onClick={() => navigate({ to: `/scan/${bom.id}` })}>
@@ -176,15 +176,13 @@ export function BomDetailPage() {
         </div>
       )}
 
-      <div className="rounded-lg border bg-card">
-        <div className="px-4 py-3 border-b font-medium text-sm">Parts</div>
-        <div className="ag-theme-balham">
+      <div className="flex-1 min-h-0 rounded-lg border bg-card overflow-hidden flex flex-col">
+        <div className="px-4 py-3 border-b font-medium text-sm shrink-0">Parts</div>
+        <div className="ag-theme-balham flex-1 min-h-0">
           <AgGridReact
             rowData={bom.parts}
             columnDefs={partColumns}
-            domLayout="autoHeight"
-            pagination
-            paginationPageSize={50}
+            getRowId={(params) => String(params.data.id)}
           />
         </div>
       </div>

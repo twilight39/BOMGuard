@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
-import { BomUpload } from '@/components/bom/BomUpload'
-import { fetchBoms, loadSample, fetchSampleList } from '@/services/api'
+import { fetchBoms, loadSample, fetchSampleList, uploadBom } from '@/services/api'
 import type { Bom } from '@/types'
 import { AgGridReact } from 'ag-grid-react'
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
@@ -21,7 +20,6 @@ interface SampleMeta {
 export function BomsPage() {
   const [boms, setBoms] = useState<Bom[]>([])
   const [loading, setLoading] = useState(true)
-  const [showUpload, setShowUpload] = useState(false)
   const [samples, setSamples] = useState<SampleMeta[]>([])
   const [showSamples, setShowSamples] = useState(() => {
     try {
@@ -31,6 +29,8 @@ export function BomsPage() {
     }
   })
   const [loadingSample, setLoadingSample] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
 
   const loadBoms = async () => {
@@ -69,6 +69,21 @@ export function BomsPage() {
     }
   }
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const result = await uploadBom(file)
+      navigate({ to: `/boms/${result.id}` })
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
   const columnDefs: ColDef<Bom>[] = [
     { headerName: 'Name', field: 'name', flex: 2, cellClass: 'cursor-pointer' },
     { headerName: 'Format', field: 'fileFormat', width: 100 },
@@ -90,7 +105,7 @@ export function BomsPage() {
     {
       headerName: 'Created',
       field: 'createdAt',
-      width: 160,
+      width: 180,
       valueFormatter: (p) =>
         p.value ? new Date(p.value).toLocaleString() : '-',
     },
@@ -99,21 +114,36 @@ export function BomsPage() {
   const showSampleSection = boms.length === 0 && !loading && showSamples
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col h-full p-6 gap-4">
+      <div className="flex items-center justify-between shrink-0">
         <h1 className="text-2xl font-heading font-bold">BOMs</h1>
-        <Button onClick={() => setShowUpload((s) => !s)}>
-          {showUpload ? 'Close Upload' : 'Upload BOM'}
+        <Button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+        >
+          {uploading ? (
+            <span className="inline-flex items-center gap-2">
+              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+              Uploading…
+            </span>
+          ) : (
+            'Upload BOM'
+          )}
         </Button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv,.xlsx,.xls"
+          onChange={handleFileChange}
+          className="hidden"
+        />
       </div>
 
-      {showUpload && <BomUpload />}
-
       {showSampleSection && (
-        <div className="rounded-xl border bg-card p-6 space-y-4 relative">
+        <div className="rounded-xl border bg-card p-6 space-y-4 relative shrink-0">
           <button
             onClick={dismissSamples}
-            className="absolute top-3 right-3 text-muted-foreground hover:text-foreground text-lg leading-none px-2 py-1 rounded-md hover:bg-muted transition-colors"
+            className="absolute top-3 right-3 text-muted-foreground hover:text-foreground text-lg leading-none px-2 py-1 rounded-md hover:bg-muted transition-colors cursor-pointer"
             aria-label="Dismiss"
             title="Dismiss"
           >
@@ -131,7 +161,7 @@ export function BomsPage() {
                 key={sample.id}
                 onClick={() => handleLoadSample(sample.id)}
                 disabled={loadingSample === sample.id}
-                className="text-left rounded-lg border bg-background p-4 space-y-2 hover:border-primary/50 hover:shadow-sm transition-all disabled:opacity-60"
+                className="text-left rounded-lg border bg-background p-4 space-y-2 hover:border-primary/50 hover:shadow-sm transition-all disabled:opacity-60 cursor-pointer"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-sm">{sample.name}</span>
@@ -147,22 +177,20 @@ export function BomsPage() {
         </div>
       )}
 
-      <div className="rounded-lg border bg-card">
+      <div className="flex-1 min-h-0 rounded-lg border bg-card overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-muted-foreground text-sm">Loading...</div>
+          <div className="h-full flex items-center justify-center text-muted-foreground text-sm">Loading...</div>
         ) : boms.length === 0 ? (
-          <div className="p-8 text-center">
+          <div className="h-full flex flex-col items-center justify-center">
             <p className="text-muted-foreground text-sm">No BOMs uploaded yet.</p>
             <p className="text-muted-foreground text-xs mt-1">Upload a CSV or XLSX to get started.</p>
           </div>
         ) : (
-          <div className="ag-theme-balham">
+          <div className="ag-theme-balham h-full">
             <AgGridReact
               rowData={boms}
               columnDefs={columnDefs}
-              domLayout="autoHeight"
-              pagination
-              paginationPageSize={20}
+              getRowId={(params) => String(params.data.id)}
               onRowClicked={(event) => {
                 if (event.data) {
                   navigate({ to: `/boms/${event.data.id}` })

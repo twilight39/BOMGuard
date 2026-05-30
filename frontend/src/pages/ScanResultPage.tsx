@@ -122,8 +122,8 @@ export function ScanResultPage() {
   ]
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col h-full p-6 gap-4">
+      <div className="flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-2xl font-heading font-bold">Scan Results</h1>
           <p className="text-muted-foreground text-sm mt-1">
@@ -149,13 +149,13 @@ export function ScanResultPage() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-destructive/10 text-destructive text-sm p-3">
+        <div className="rounded-md bg-destructive/10 text-destructive text-sm p-3 shrink-0">
           {error}
         </div>
       )}
 
       {bom.complianceStatus === 'pending' && results.length === 0 && (
-        <div className="rounded-lg border bg-card p-8 text-center text-muted-foreground">
+        <div className="rounded-lg border bg-card p-8 text-center text-muted-foreground shrink-0">
           <p>This BOM has not been scanned yet.</p>
           <Button className="mt-4" onClick={handleScan} disabled={scanning}>
             Run Scan
@@ -164,24 +164,22 @@ export function ScanResultPage() {
       )}
 
       {bom.complianceStatus === 'clean' && results.length === 0 && (
-        <div className="rounded-lg border bg-green-50 dark:bg-green-950/30 p-8 text-center">
+        <div className="rounded-lg border bg-green-50 dark:bg-green-950/30 p-8 text-center shrink-0">
           <p className="text-green-700 dark:text-green-400 font-medium">No compliance issues found</p>
           <p className="text-muted-foreground text-sm mt-1">All CAS numbers passed rule-based checks.</p>
         </div>
       )}
 
       {results.length > 0 && (
-        <div className="rounded-lg border bg-card">
-          <div className="px-4 py-3 border-b font-medium text-sm">
+        <div className="flex-1 min-h-0 rounded-lg border bg-card overflow-hidden flex flex-col">
+          <div className="px-4 py-3 border-b font-medium text-sm shrink-0">
             {results.length} hit{results.length !== 1 ? 's' : ''} found
           </div>
-          <div className="ag-theme-balham">
+          <div className="ag-theme-balham flex-1 min-h-0">
             <AgGridReact
               rowData={results}
               columnDefs={resultColumns}
-              domLayout="autoHeight"
-              pagination
-              paginationPageSize={20}
+              getRowId={(params) => String(params.data.id)}
             />
           </div>
         </div>

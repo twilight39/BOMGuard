@@ -1,6 +1,18 @@
-import type { Bom, BomDetail } from '@/types'
+import type { Bom, BomDetail, ScanResult } from '@/types'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
+function camelize<T>(obj: unknown): T {
+  if (obj === null || obj === undefined) return obj as T
+  if (Array.isArray(obj)) return obj.map((item) => camelize(item)) as T
+  if (typeof obj !== 'object') return obj as T
+  const result: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(obj)) {
+    const camelKey = key.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase())
+    result[camelKey] = camelize(value)
+  }
+  return result as T
+}
 
 async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
   return fetch(`${API_BASE}${path}`, {
@@ -69,12 +81,14 @@ export async function uploadAvatar(file: File): Promise<{ id: string; email: str
 
 export async function fetchBoms(): Promise<Bom[]> {
   const res = await apiFetch('/api/boms/')
-  return handleResponse<Bom[]>(res)
+  const data = await handleResponse<unknown>(res)
+  return camelize<Bom[]>(data)
 }
 
 export async function fetchBom(id: number): Promise<BomDetail> {
   const res = await apiFetch(`/api/boms/${id}`)
-  return handleResponse<BomDetail>(res)
+  const data = await handleResponse<unknown>(res)
+  return camelize<BomDetail>(data)
 }
 
 export async function uploadBom(file: File): Promise<{ id: number; filename: string; status: string }> {
@@ -96,7 +110,8 @@ export async function deleteBom(id: number): Promise<{ id: number; deleted: bool
 
 export async function loadSample(sampleId: string): Promise<Bom> {
   const res = await apiFetch(`/api/boms/samples/${sampleId}`, { method: 'POST' })
-  return handleResponse<Bom>(res)
+  const data = await handleResponse<unknown>(res)
+  return camelize<Bom>(data)
 }
 
 export async function fetchSampleList(): Promise<Array<{ id: string; name: string; filename: string }>> {
@@ -115,19 +130,11 @@ export async function triggerScan(bomId: number): Promise<{ bom_id: number; stat
 }
 
 export async function fetchScanResults(bomId: number): Promise<{
-  bom_id: number
+  bomId: number
   status: string
-  results: Array<{
-    id: number
-    part_id: number | null
-    regulation_id: string | null
-    cas_number: string | null
-    hit_type: string | null
-    risk_score: number | null
-    severity: string | null
-    details: Record<string, unknown> | null
-  }>
+  results: ScanResult[]
 }> {
   const res = await apiFetch(`/api/scan/${bomId}/result`)
-  return handleResponse(res)
+  const data = await handleResponse<unknown>(res)
+  return camelize<{ bomId: number; status: string; results: ScanResult[] }>(data)
 }
