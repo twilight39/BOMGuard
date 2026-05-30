@@ -24,7 +24,6 @@ RUN uv sync --no-install-project
 # Copy application code
 COPY bomguard/ ./bomguard/
 COPY tests/ ./tests/
-COPY samples/ ./samples/
 COPY alembic.ini ./
 COPY migrations/ ./migrations/
 
