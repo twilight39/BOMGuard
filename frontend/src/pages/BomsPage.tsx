@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { BomUpload } from '@/components/bom/BomUpload'
-import { fetchBoms, deleteBom, loadSample, fetchSampleList } from '@/services/api'
+import { fetchBoms, loadSample, fetchSampleList } from '@/services/api'
 import type { Bom } from '@/types'
 import { AgGridReact } from 'ag-grid-react'
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
+import type { ColDef } from 'ag-grid-community'
 
 ModuleRegistry.registerModules([AllCommunityModule])
 
@@ -47,12 +48,6 @@ export function BomsPage() {
     fetchSampleList().then(setSamples).catch(() => setSamples([]))
   }, [])
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Delete this BOM?')) return
-    await deleteBom(id)
-    setBoms((prev) => prev.filter((b) => b.id !== id))
-  }
-
   const handleLoadSample = async (sampleId: string) => {
     setLoadingSample(sampleId)
     try {
@@ -74,7 +69,7 @@ export function BomsPage() {
     }
   }
 
-  const columnDefs = [
+  const columnDefs: ColDef<Bom>[] = [
     { headerName: 'Name', field: 'name', flex: 2, cellClass: 'cursor-pointer' },
     { headerName: 'Format', field: 'fileFormat', width: 100 },
     { headerName: 'Parts', field: 'totalParts', width: 100 },

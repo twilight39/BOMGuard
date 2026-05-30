@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { fetchBom, deleteBom, triggerScan, fetchScanResults } from '@/services/api'
-import type { BomDetail, ScanResult } from '@/types'
+import type { BomDetail, BomPart, ScanResult } from '@/types'
 import { AgGridReact } from 'ag-grid-react'
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
+import type { ColDef } from 'ag-grid-community'
 
 ModuleRegistry.registerModules([AllCommunityModule])
 
@@ -101,7 +102,7 @@ export function BomDetailPage() {
     )
   }
 
-  const partColumns = [
+  const partColumns: ColDef<BomPart>[] = [
     { headerName: 'Line', field: 'lineNumber' as const, width: 80 },
     { headerName: 'Part Number', field: 'partNumber' as const, flex: 2 },
     { headerName: 'Description', field: 'description' as const, flex: 2 },

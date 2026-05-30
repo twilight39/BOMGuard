@@ -5,6 +5,7 @@ import { fetchBoms, triggerScan } from '@/services/api'
 import type { Bom } from '@/types'
 import { AgGridReact } from 'ag-grid-react'
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
+import type { ColDef } from 'ag-grid-community'
 
 ModuleRegistry.registerModules([AllCommunityModule])
 
@@ -31,7 +32,7 @@ function ScanNewPage() {
     }
   }
 
-  const columnDefs = [
+  const columnDefs: ColDef<Bom>[] = [
     { headerName: 'Name', field: 'name', flex: 2, cellClass: 'cursor-pointer' },
     { headerName: 'Format', field: 'fileFormat', width: 100 },
     { headerName: 'Parts', field: 'totalParts', width: 100 },

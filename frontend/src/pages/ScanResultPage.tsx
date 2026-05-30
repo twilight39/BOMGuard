@@ -5,6 +5,7 @@ import { fetchBom, triggerScan, fetchScanResults } from '@/services/api'
 import type { BomDetail, ScanResult } from '@/types'
 import { AgGridReact } from 'ag-grid-react'
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
+import type { ColDef } from 'ag-grid-community'
 
 ModuleRegistry.registerModules([AllCommunityModule])
 
@@ -79,7 +80,7 @@ export function ScanResultPage() {
     )
   }
 
-  const resultColumns = [
+  const resultColumns: ColDef<ScanResult>[] = [
     { headerName: 'CAS Number', field: 'casNumber', flex: 1 },
     {
       headerName: 'Regulation',
