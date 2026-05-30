@@ -1,5 +1,11 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { deleteMe, updateMe, uploadAvatar } from '@/services/api'
@@ -12,13 +18,21 @@ interface UserSettingsModalProps {
 export function UserSettingsModal({ open, onClose }: UserSettingsModalProps) {
   const { user, logout, refreshUser } = useAuth()
   const { theme, setTheme } = useTheme()
-  const [name, setName] = useState(user?.name || '')
+  const [name, setName] = useState('')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [error, setError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (open && user) {
+      setName(user.name || '')
+      setShowDeleteConfirm(false)
+      setError('')
+    }
+  }, [open, user])
 
   if (!open || !user) return null
 
@@ -95,29 +109,33 @@ export function UserSettingsModal({ open, onClose }: UserSettingsModalProps) {
 
         {/* Avatar + Basic Info */}
         <div className="flex items-center gap-4">
-          <button
-            onClick={handleAvatarClick}
-            disabled={uploading}
-            className="relative group shrink-0"
-            title="Change profile picture"
-          >
-            {user.avatar_url ? (
-              <img
-                src={user.avatar_url}
-                alt=""
-                className="h-14 w-14 rounded-full object-cover border group-hover:opacity-75 transition-opacity"
-              />
-            ) : (
-              <div className="h-14 w-14 rounded-full bg-muted border flex items-center justify-center text-lg font-semibold text-muted-foreground group-hover:bg-muted/70 transition-colors">
-                {(user.name || user.email).charAt(0).toUpperCase()}
-              </div>
-            )}
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <span className="text-xs font-medium bg-black/60 text-white rounded-full px-2 py-0.5">
-                {uploading ? '…' : 'Edit'}
-              </span>
-            </div>
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={handleAvatarClick}
+                disabled={uploading}
+                className="relative shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {user.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt=""
+                    className="h-14 w-14 rounded-full object-cover border"
+                  />
+                ) : (
+                  <div className="h-14 w-14 rounded-full bg-muted border flex items-center justify-center text-lg font-semibold text-muted-foreground">
+                    {(user.name || user.email).charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="absolute -bottom-0.5 -right-0.5 h-5 w-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center border-2 border-card">
+                  <Pencil className="h-2.5 w-2.5" />
+                </span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>Change profile picture</p>
+            </TooltipContent>
+          </Tooltip>
           <input
             ref={fileInputRef}
             type="file"

@@ -201,7 +201,7 @@ async def upload_avatar(
     with open(filepath, "wb") as f:
         f.write(contents)
 
-    avatar_url = f"/static/avatars/{filename}"
+    avatar_url = f"{str(request.base_url).rstrip('/')}/static/avatars/{filename}"
     user.avatar_url = avatar_url
     db.commit()
 
