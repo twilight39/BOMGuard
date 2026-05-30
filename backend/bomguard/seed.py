@@ -1,8 +1,12 @@
 """Seed script for initial database data."""
 
+import os
+from pathlib import Path
+
 from sqlalchemy.orm import Session
 
-from bomguard.models.database import Regulation
+from bomguard.models.database import Bom, BomPart, Regulation
+from bomguard.services.bom_parser import parse_bom
 
 REGULATIONS = [
     {
@@ -49,4 +53,73 @@ def seed_regulations(db: Session) -> None:
         existing = db.query(Regulation).filter_by(id=reg_data["id"]).first()
         if not existing:
             db.add(Regulation(**reg_data))
+    db.commit()
+
+
+def _find_samples_dir() -> Path:
+    """Find the samples directory in local dev or Docker."""
+    # Try relative to this file first (local dev: backend/../samples)
+    candidates = [
+        Path(__file__).parent.parent.parent / "samples",
+        Path(__file__).parent.parent / "samples",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]  # fallback
+
+
+SAMPLE_DIR = _find_samples_dir()
+
+SAMPLE_BOMS = [
+    ("iot_sensor_bom.csv", "IoT Sensor BOM"),
+    ("power_supply_bom.csv", "Power Supply BOM"),
+    ("smartphone_pcb_bom.csv", "Smartphone PCB BOM"),
+]
+
+
+def seed_sample_boms(db: Session) -> None:
+    """Seed sample BOMs from /samples if none exist."""
+    existing = db.query(Bom).filter(Bom.source_type == "sample").first()
+    if existing:
+        return
+
+    for filename, display_name in SAMPLE_BOMS:
+        filepath = SAMPLE_DIR / filename
+        if not filepath.exists():
+            continue
+
+        with open(filepath, "rb") as f:
+            contents = f.read()
+
+        try:
+            parts = parse_bom(contents, filename)
+        except ValueError:
+            continue
+
+        bom = Bom(
+            name=display_name,
+            source_type="sample",
+            file_format=filename.rsplit(".", 1)[-1].lower(),
+            total_parts=len(parts),
+            compliance_status="pending",
+            user_id=None,
+        )
+        db.add(bom)
+        db.flush()
+
+        for parsed in parts:
+            bom_part = BomPart(
+                bom_id=bom.id,
+                line_number=parsed.line_number,
+                part_number=parsed.part_number,
+                description=parsed.description,
+                manufacturer=parsed.manufacturer,
+                supplier=parsed.supplier,
+                quantity=parsed.quantity,
+                unit=parsed.unit or "pcs",
+                cas_numbers=parsed.cas_numbers,
+            )
+            db.add(bom_part)
+
     db.commit()

@@ -6,6 +6,7 @@ export interface Bom {
   fileFormat?: string | null
   totalParts: number
   complianceStatus: string
+  userId?: string | null
   createdAt?: string | null
 }
 
@@ -26,10 +27,14 @@ export interface BomDetail extends Bom {
 }
 
 export interface ScanResult {
-  partId: number
-  cas: string
-  regulation: string
-  hitType: string
-  riskScore: number
-  severity: string
+  id: number
+  bomId?: number | null
+  partId?: number | null
+  regulationId?: string | null
+  casNumber?: string | null
+  hitType?: string | null
+  riskScore?: number | null
+  severity?: string | null
+  details?: Record<string, unknown> | null
+  createdAt?: string | null
 }

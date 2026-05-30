@@ -53,6 +53,7 @@ class BomSchema(BaseModel):
     file_format: str | None = None
     total_parts: int = 0
     compliance_status: str = "pending"
+    user_id: str | None = None
     created_at: datetime | None = None
 
 
