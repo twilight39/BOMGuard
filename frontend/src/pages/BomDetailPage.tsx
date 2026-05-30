@@ -162,7 +162,12 @@ export function BomDetailPage() {
           </div>
           <div className="flex flex-wrap gap-2">
             {Array.from(new Set(scanResults.map((r) => r.severity))).sort().map((sev) => (
-              <span key={sev} className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium capitalize bg-muted">
+              <span key={sev} className={[
+                'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium capitalize',
+                sev === 'unknown'
+                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-400'
+                  : 'bg-muted',
+              ].join(' ')}>
                 {sev}: {scanResults.filter((r) => r.severity === sev).length}
               </span>
             ))}

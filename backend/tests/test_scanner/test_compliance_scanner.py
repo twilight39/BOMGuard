@@ -122,7 +122,8 @@ class TestComplianceScanner:
         assert bom.compliance_status == "flagged"
 
     def test_scan_no_hits_returns_clean(self, db: Session, restrictions: None) -> None:
-        """Scanner should mark BOM as clean when no restricted CAS is found."""
+        """Scanner should mark BOM as clean when no restricted CAS is found.
+        Unknown CAS numbers are tracked but don't affect compliance status."""
         bom = Bom(name="Clean BOM", source_type="upload", total_parts=1)
         db.add(bom)
         db.commit()
@@ -139,7 +140,9 @@ class TestComplianceScanner:
         scanner = ComplianceScanner(db)
         hits = scanner.scan_bom(bom.id)
 
-        assert len(hits) == 0
+        assert len(hits) == 1
+        assert hits[0].hit_type == "unknown_cas"
+        assert hits[0].severity == "unknown"
         assert bom.compliance_status == "clean"
 
     def test_scan_clears_old_results(self, db: Session, restrictions: None) -> None:

@@ -26,7 +26,7 @@ class ComplianceScanner:
         1. Load BOM parts
         2. For each part, parse CAS numbers
         3. Look up each CAS in substances → substance_regulation_status
-        4. Write hits to scan_results
+        4. Write hits + unknown CAS entries to scan_results
         5. Update BOM compliance_status
         """
         bom = self.db.query(Bom).filter(Bom.id == bom_id).first()
@@ -54,6 +54,20 @@ class ComplianceScanner:
                     .first()
                 )
                 if not substance:
+                    # Track unknown CAS so the user knows it couldn't be checked
+                    hit = ScanResult(
+                        bom_id=bom_id,
+                        part_id=part.id,
+                        cas_number=cas,
+                        hit_type="unknown_cas",
+                        risk_score=None,
+                        severity="unknown",
+                        details={
+                            "message": "CAS number not found in substance database — may require enrichment",
+                        },
+                    )
+                    self.db.add(hit)
+                    hits.append(hit)
                     continue
 
                 statuses = (
@@ -84,8 +98,9 @@ class ComplianceScanner:
                     hits.append(hit)
 
         # Update BOM compliance status
-        if hits:
-            critical_count = sum(1 for h in hits if h.severity == "critical")
+        known_hits = [h for h in hits if h.hit_type != "unknown_cas"]
+        if known_hits:
+            critical_count = sum(1 for h in known_hits if h.severity == "critical")
             bom.compliance_status = "flagged" if critical_count > 0 else "review"
         else:
             bom.compliance_status = "clean"

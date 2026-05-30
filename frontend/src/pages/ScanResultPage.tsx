@@ -96,7 +96,17 @@ export function ScanResultPage() {
 
   const resultColumns = [
     { headerName: 'CAS Number', field: 'casNumber' as const, flex: 1 },
-    { headerName: 'Regulation', field: 'regulationId' as const, flex: 2 },
+    {
+      headerName: 'Regulation',
+      field: 'regulationId' as const,
+      flex: 2,
+      cellRenderer: (p: { value: string | null; data: ScanResult }) =>
+        p.data.hitType === 'unknown_cas' ? (
+          <span className="text-muted-foreground italic">—</span>
+        ) : (
+          <span>{p.value || '—'}</span>
+        ),
+    },
     {
       headerName: 'Severity',
       field: 'severity' as const,
@@ -112,9 +122,14 @@ export function ScanResultPage() {
     {
       headerName: 'Hit Type',
       field: 'hitType' as const,
-      width: 140,
+      width: 160,
       cellRenderer: (p: { value: string }) => (
-        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize bg-muted">
+        <span className={[
+          'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize',
+          p.value === 'unknown_cas'
+            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-400'
+            : 'bg-muted',
+        ].join(' ')}>
           {p.value?.replace('_', ' ')}
         </span>
       ),
