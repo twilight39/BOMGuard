@@ -75,18 +75,54 @@ function Breadcrumbs() {
   )
 }
 
+function UserAvatar({ name, email, avatarUrl }: { name: string | null; email: string; avatarUrl: string | null }) {
+  const initial = (name || email).charAt(0).toUpperCase()
+  if (avatarUrl) {
+    return (
+      <img
+        src={avatarUrl}
+        alt=""
+        className="h-9 w-9 rounded-full object-cover border"
+      />
+    )
+  }
+  return (
+    <div className="h-9 w-9 rounded-full bg-muted border flex items-center justify-center text-xs font-semibold text-muted-foreground">
+      {initial}
+    </div>
+  )
+}
+
 function UserSection() {
   const { user, isLoading, login, logout } = useAuth()
 
   return (
-    <div className="p-4 border-t space-y-3">
+    <div className="p-4 border-t">
       {isLoading ? (
         <div className="text-xs text-muted-foreground">Loading…</div>
       ) : user ? (
-        <div className="space-y-2">
-          <div className="text-sm font-medium truncate">{user.name || user.email}</div>
-          <div className="text-xs text-muted-foreground truncate">{user.email}</div>
-          <Button variant="ghost" size="sm" className="w-full" onClick={logout}>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <UserAvatar
+              name={user.name}
+              email={user.email}
+              avatarUrl={user.avatar_url}
+            />
+            <div className="min-w-0 flex-1 leading-tight">
+              <div className="text-sm font-medium truncate">
+                {user.name || user.email}
+              </div>
+              <div className="text-xs text-muted-foreground truncate">
+                {user.email}
+              </div>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full bg-muted/50 hover:bg-muted"
+            onClick={logout}
+          >
             Logout
           </Button>
         </div>
