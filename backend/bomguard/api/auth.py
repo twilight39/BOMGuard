@@ -7,9 +7,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
+from bomguard.config import Settings
 from bomguard.db import get_db
 from bomguard.models.database import User
 from bomguard.services.auth_service import WorkOSAuthService
+
+settings = Settings()
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
@@ -65,7 +68,7 @@ async def auth_callback(
     request.session["email"] = user.email
     request.session["name"] = user.name
 
-    return RedirectResponse(url="/")
+    return RedirectResponse(url=settings.frontend_url)
 
 
 @router.post("/logout")

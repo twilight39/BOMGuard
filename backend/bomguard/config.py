@@ -25,3 +25,4 @@ class Settings(BaseSettings):
 
     # Session cookie signing (required for auth)
     secret_key: str = "dev-secret-change-in-prod"
+    frontend_url: str = "http://localhost:3000"
