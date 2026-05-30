@@ -104,6 +104,11 @@ export async function fetchSampleList(): Promise<Array<{ id: string; name: strin
   return handleResponse(res)
 }
 
+export async function fetchStats(): Promise<{ substances: number; regulations: number; boms: number }> {
+  const res = await apiFetch('/api/admin/ml/stats')
+  return handleResponse(res)
+}
+
 export async function triggerScan(bomId: number): Promise<{ bom_id: number; status: string }> {
   const res = await apiFetch(`/api/scan/${bomId}`, { method: 'POST' })
   return handleResponse<{ bom_id: number; status: string }>(res)

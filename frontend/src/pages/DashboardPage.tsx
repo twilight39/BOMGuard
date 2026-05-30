@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { fetchHealth } from '@/services/api'
+import { useNavigate } from '@tanstack/react-router'
+import { fetchHealth, fetchStats } from '@/services/api'
+import { Button } from '@/components/ui/button'
 
 function StatCard({ title, value, subtitle }: { title: string; value: string; subtitle?: string }) {
   return (
@@ -12,12 +14,16 @@ function StatCard({ title, value, subtitle }: { title: string; value: string; su
 }
 
 export function DashboardPage() {
+  const navigate = useNavigate()
   const [health, setHealth] = useState<string>('checking…')
+  const [stats, setStats] = useState({ substances: 0, regulations: 0, boms: 0 })
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchHealth()
-      .then((r) => setHealth(r.status ?? 'unknown'))
-      .catch(() => setHealth('offline'))
+    Promise.all([
+      fetchHealth().then((r) => setHealth(r.status ?? 'unknown')).catch(() => setHealth('offline')),
+      fetchStats().then(setStats).catch(() => setStats({ substances: 0, regulations: 0, boms: 0 })),
+    ]).finally(() => setLoading(false))
   }, [])
 
   return (
@@ -30,11 +36,42 @@ export function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Substances" value="—" subtitle="from ECHA SVHC" />
-        <StatCard title="Regulations" value="1" subtitle="EU REACH SVHC active" />
-        <StatCard title="BOMs Uploaded" value="0" subtitle="pending scans" />
-        <StatCard title="API Status" value={health} subtitle="backend health check" />
+        <StatCard
+          title="Substances"
+          value={loading ? '—' : String(stats.substances)}
+          subtitle="from ECHA SVHC + EPA"
+        />
+        <StatCard
+          title="Regulations"
+          value={loading ? '—' : String(stats.regulations)}
+          subtitle="active regulations tracked"
+        />
+        <StatCard
+          title="BOMs Uploaded"
+          value={loading ? '—' : String(stats.boms)}
+          subtitle="pending scans"
+        />
+        <StatCard
+          title="API Status"
+          value={health}
+          subtitle="backend health check"
+        />
       </div>
+
+      {stats.boms === 0 && !loading && (
+        <div className="rounded-xl border bg-card p-6 space-y-3">
+          <h2 className="text-lg font-semibold">Get started</h2>
+          <p className="text-muted-foreground text-sm">
+            Upload a BOM to start checking compliance against live regulatory data.
+          </p>
+          <div className="flex gap-3">
+            <Button onClick={() => navigate({ to: '/boms' })}>Go to BOMs</Button>
+            <Button variant="outline" onClick={() => navigate({ to: '/scan/new' })}>
+              Start a Scan
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-lg border bg-card p-5">

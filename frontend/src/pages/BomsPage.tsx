@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { BomUpload } from '@/components/bom/BomUpload'
@@ -6,6 +6,7 @@ import { fetchBoms, deleteBom, loadSample, fetchSampleList } from '@/services/ap
 import type { Bom } from '@/types'
 import { AgGridReact } from 'ag-grid-react'
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
+import type { CellClickedEvent } from 'ag-grid-community'
 
 ModuleRegistry.registerModules([AllCommunityModule])
 
@@ -74,19 +75,18 @@ export function BomsPage() {
     }
   }
 
+  const onRowClicked = useCallback((event: CellClickedEvent<Bom>) => {
+    if (event.data) {
+      navigate({ to: `/boms/${event.data.id}` })
+    }
+  }, [navigate])
+
   const columnDefs = [
     {
       headerName: 'Name',
       field: 'name' as const,
       flex: 2,
-      cellRenderer: (p: { value: string; data: Bom }) => (
-        <button
-          className="text-left text-primary hover:underline font-medium"
-          onClick={() => navigate({ to: `/boms/${p.data.id}` })}
-        >
-          {p.value}
-        </button>
-      ),
+      cellClass: 'cursor-pointer',
     },
     { headerName: 'Format', field: 'fileFormat' as const, width: 100 },
     { headerName: 'Parts', field: 'totalParts' as const, width: 100 },
@@ -108,26 +108,22 @@ export function BomsPage() {
         p.value ? new Date(p.value).toLocaleString() : '-',
     },
     {
-      headerName: 'Actions',
-      width: 120,
+      headerName: '',
+      width: 80,
+      sortable: false,
+      filter: false,
       cellRenderer: (p: { data: Bom }) => (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate({ to: `/boms/${p.data.id}` })}
-          >
-            View
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-destructive"
-            onClick={() => handleDelete(p.data.id)}
-          >
-            Delete
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-destructive h-6 px-2"
+          onClick={(e) => {
+            e.stopPropagation()
+            handleDelete(p.data.id)
+          }}
+        >
+          Delete
+        </Button>
       ),
     },
   ]
@@ -205,6 +201,7 @@ export function BomsPage() {
               domLayout="autoHeight"
               pagination
               paginationPageSize={20}
+              onRowClicked={onRowClicked}
             />
           </div>
         )}
