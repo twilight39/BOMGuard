@@ -87,7 +87,7 @@ export function ScanResultPage() {
       field: 'regulationId',
       flex: 2,
       valueFormatter: (p) =>
-        p.data.hitType === 'unknown_cas' ? '—' : (p.value || '—'),
+        p.data?.hitType === 'unknown_cas' ? '—' : (p.value || '—'),
     },
     {
       headerName: 'Severity',
