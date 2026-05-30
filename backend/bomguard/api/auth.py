@@ -3,6 +3,7 @@
 import mimetypes
 import os
 import secrets
+import time
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
@@ -201,7 +202,8 @@ async def upload_avatar(
     with open(filepath, "wb") as f:
         f.write(contents)
 
-    avatar_url = f"{str(request.base_url).rstrip('/')}/static/avatars/{filename}"
+    cache_buster = int(time.time())
+    avatar_url = f"{str(request.base_url).rstrip('/')}/static/avatars/{filename}?v={cache_buster}"
     user.avatar_url = avatar_url
     db.commit()
 
