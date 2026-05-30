@@ -8,21 +8,6 @@ import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
 
 ModuleRegistry.registerModules([AllCommunityModule])
 
-const severityBadge = (severity: string) => {
-  const map: Record<string, string> = {
-    critical: 'bg-destructive text-destructive-foreground',
-    high: 'bg-orange-500 text-white',
-    medium: 'bg-yellow-500 text-black',
-    low: 'bg-blue-500 text-white',
-    clean: 'bg-muted text-muted-foreground',
-  }
-  return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${map[severity] || map.low}`}>
-      {severity}
-    </span>
-  )
-}
-
 export function ScanResultPage() {
   const { bomId } = useParams({ from: '/scan/$bomId' })
   const navigate = useNavigate()
@@ -95,44 +80,43 @@ export function ScanResultPage() {
   }
 
   const resultColumns = [
-    { headerName: 'CAS Number', field: 'casNumber' as const, flex: 1 },
+    { headerName: 'CAS Number', field: 'casNumber', flex: 1 },
     {
       headerName: 'Regulation',
-      field: 'regulationId' as const,
+      field: 'regulationId',
       flex: 2,
-      cellRenderer: (p: { value: string | null; data: ScanResult }) =>
-        p.data.hitType === 'unknown_cas' ? (
-          <span className="text-muted-foreground italic">—</span>
-        ) : (
-          <span>{p.value || '—'}</span>
-        ),
+      valueFormatter: (p: { data: ScanResult; value: string | null }) =>
+        p.data.hitType === 'unknown_cas' ? '—' : (p.value || '—'),
     },
     {
       headerName: 'Severity',
-      field: 'severity' as const,
+      field: 'severity',
       width: 120,
-      cellRenderer: (p: { value: string }) => severityBadge(p.value),
+      valueFormatter: (p: { value: string }) => p.value,
+      cellClass: (p: { value: string }) =>
+        p.value === 'critical'
+          ? 'text-destructive font-semibold'
+          : p.value === 'high'
+            ? 'text-orange-600 font-semibold'
+            : p.value === 'medium'
+              ? 'text-yellow-600 font-semibold'
+              : p.value === 'unknown'
+                ? 'text-yellow-600 dark:text-yellow-400 italic'
+                : '',
     },
     {
       headerName: 'Risk Score',
-      field: 'riskScore' as const,
+      field: 'riskScore',
       width: 120,
       valueFormatter: (p: { value: number | null }) => (p.value != null ? p.value.toFixed(2) : '-'),
     },
     {
       headerName: 'Hit Type',
-      field: 'hitType' as const,
+      field: 'hitType',
       width: 160,
-      cellRenderer: (p: { value: string }) => (
-        <span className={[
-          'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize',
-          p.value === 'unknown_cas'
-            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-400'
-            : 'bg-muted',
-        ].join(' ')}>
-          {p.value?.replace('_', ' ')}
-        </span>
-      ),
+      valueFormatter: (p: { value: string }) => p.value?.replace(/_/g, ' ') || '—',
+      cellClass: (p: { value: string }) =>
+        p.value === 'unknown_cas' ? 'text-yellow-600 dark:text-yellow-400 italic' : '',
     },
   ]
 
@@ -163,6 +147,12 @@ export function ScanResultPage() {
         </div>
       </div>
 
+      {error && (
+        <div className="rounded-md bg-destructive/10 text-destructive text-sm p-3">
+          {error}
+        </div>
+      )}
+
       {bom.complianceStatus === 'pending' && results.length === 0 && (
         <div className="rounded-lg border bg-card p-8 text-center text-muted-foreground">
           <p>This BOM has not been scanned yet.</p>
@@ -184,7 +174,7 @@ export function ScanResultPage() {
           <div className="px-4 py-3 border-b font-medium text-sm">
             {results.length} hit{results.length !== 1 ? 's' : ''} found
           </div>
-          <div className="ag-theme-alpine">
+          <div className="ag-theme-balham">
             <AgGridReact
               rowData={results}
               columnDefs={resultColumns}

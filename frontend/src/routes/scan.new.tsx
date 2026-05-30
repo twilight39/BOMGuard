@@ -5,7 +5,6 @@ import { fetchBoms, triggerScan } from '@/services/api'
 import type { Bom } from '@/types'
 import { AgGridReact } from 'ag-grid-react'
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
-import type { RowClickedEvent } from 'ag-grid-community'
 
 ModuleRegistry.registerModules([AllCommunityModule])
 
@@ -32,55 +31,23 @@ function ScanNewPage() {
     }
   }
 
-  const onRowClicked = (event: RowClickedEvent<Bom>) => {
-    if (event.data) {
-      navigate({ to: `/boms/${event.data.id}` })
-    }
-  }
-
   const columnDefs = [
-    {
-      headerName: 'Name',
-      field: 'name' as const,
-      flex: 2,
-      cellClass: 'cursor-pointer',
-    },
-    { headerName: 'Format', field: 'fileFormat' as const, width: 100 },
-    { headerName: 'Parts', field: 'totalParts' as const, width: 100 },
+    { headerName: 'Name', field: 'name', flex: 2, cellClass: 'cursor-pointer' },
+    { headerName: 'Format', field: 'fileFormat', width: 100 },
+    { headerName: 'Parts', field: 'totalParts', width: 100 },
     {
       headerName: 'Status',
-      field: 'complianceStatus' as const,
+      field: 'complianceStatus',
       width: 120,
-      cellRenderer: (p: { value: string }) => (
-        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize bg-muted">
-          {p.value}
-        </span>
-      ),
-    },
-    {
-      headerName: '',
-      width: 120,
-      sortable: false,
-      filter: false,
-      cellRenderer: (p: { data: Bom }) => (
-        <Button
-          size="sm"
-          disabled={scanningId === p.data.id}
-          onClick={(e) => {
-            e.stopPropagation()
-            handleScan(p.data.id)
-          }}
-        >
-          {scanningId === p.data.id ? (
-            <span className="inline-flex items-center gap-1.5">
-              <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-              Scanning
-            </span>
-          ) : (
-            'Scan'
-          )}
-        </Button>
-      ),
+      valueFormatter: (p: { value: string }) => p.value,
+      cellClass: (p: { value: string }) =>
+        p.value === 'flagged'
+          ? 'text-destructive font-medium'
+          : p.value === 'clean'
+            ? 'text-green-600 dark:text-green-400 font-medium'
+            : p.value === 'review'
+              ? 'text-yellow-600 dark:text-yellow-400 font-medium'
+              : '',
     },
   ]
 
@@ -88,9 +55,7 @@ function ScanNewPage() {
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-heading font-bold">Scan</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Select a BOM to run a compliance scan.
-        </p>
+        <p className="text-muted-foreground text-sm mt-1">Select a BOM to run a compliance scan.</p>
       </div>
 
       <div className="rounded-lg border bg-card">
@@ -104,18 +69,45 @@ function ScanNewPage() {
             </p>
           </div>
         ) : (
-          <div className="ag-theme-alpine">
+          <div className="ag-theme-balham">
             <AgGridReact
               rowData={boms}
               columnDefs={columnDefs}
               domLayout="autoHeight"
               pagination
               paginationPageSize={20}
-              onRowClicked={onRowClicked}
+              onRowClicked={(event) => {
+                if (event.data) {
+                  navigate({ to: `/boms/${event.data.id}` })
+                }
+              }}
             />
           </div>
         )}
       </div>
+
+      {boms.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {boms.map((bom) => (
+            <Button
+              key={bom.id}
+              variant="outline"
+              size="sm"
+              disabled={scanningId === bom.id}
+              onClick={() => handleScan(bom.id)}
+            >
+              {scanningId === bom.id ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  Scanning {bom.name}...
+                </span>
+              ) : (
+                <>Scan {bom.name}</>
+              )}
+            </Button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

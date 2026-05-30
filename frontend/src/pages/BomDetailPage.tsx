@@ -177,7 +177,7 @@ export function BomDetailPage() {
 
       <div className="rounded-lg border bg-card">
         <div className="px-4 py-3 border-b font-medium text-sm">Parts</div>
-        <div className="ag-theme-alpine">
+        <div className="ag-theme-balham">
           <AgGridReact
             rowData={bom.parts}
             columnDefs={partColumns}
