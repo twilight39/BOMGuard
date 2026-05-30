@@ -10,7 +10,6 @@ from starlette.middleware.sessions import SessionMiddleware
 from bomguard.config import Settings
 from bomguard.main import create_app
 
-
 TEST_DB_URL = "postgresql://bomguard:bomguard@localhost:5432/bomguard_test"
 
 
@@ -57,3 +56,17 @@ def test_logout_without_session(test_client):
     response = test_client.post("/api/auth/logout")
     assert response.status_code == 200
     assert response.json()["status"] == "logged_out"
+
+
+def test_callback_missing_params(test_client):
+    response = test_client.get("/api/auth/callback")
+    assert response.status_code == 400
+    assert "Missing OAuth code or state" in response.json()["detail"]
+
+
+def test_callback_workos_error(test_client):
+    response = test_client.get(
+        "/api/auth/callback?error=access_denied&error_description=User+denied"
+    )
+    assert response.status_code == 400
+    assert "OAuth error: User denied" in response.json()["detail"]

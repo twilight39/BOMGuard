@@ -29,11 +29,20 @@ async def login(request: Request) -> RedirectResponse:
 @router.get("/callback", name="auth_callback")
 async def auth_callback(
     request: Request,
-    code: str = Query(...),
-    state: str = Query(...),
+    code: str | None = Query(None),
+    state: str | None = Query(None),
+    error: str | None = Query(None),
+    error_description: str | None = Query(None),
     db: Session = Depends(get_db),
 ) -> RedirectResponse:
     """Handle WorkOS OAuth callback."""
+    if error:
+        detail = error_description or error
+        raise HTTPException(status_code=400, detail=f"OAuth error: {detail}")
+
+    if not code or not state:
+        raise HTTPException(status_code=400, detail="Missing OAuth code or state")
+
     stored_state = request.session.get("oauth_state")
     if not stored_state or stored_state != state:
         raise HTTPException(status_code=400, detail="Invalid OAuth state")
