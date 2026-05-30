@@ -5,7 +5,7 @@ import { fetchBoms, triggerScan } from '@/services/api'
 import type { Bom } from '@/types'
 import { AgGridReact } from 'ag-grid-react'
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
-import type { CellClickedEvent } from 'ag-grid-community'
+import type { RowClickedEvent } from 'ag-grid-community'
 
 ModuleRegistry.registerModules([AllCommunityModule])
 
@@ -32,7 +32,7 @@ function ScanNewPage() {
     }
   }
 
-  const onRowClicked = (event: CellClickedEvent<Bom>) => {
+  const onRowClicked = (event: RowClickedEvent<Bom>) => {
     if (event.data) {
       navigate({ to: `/boms/${event.data.id}` })
     }

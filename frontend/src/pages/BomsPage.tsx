@@ -6,7 +6,7 @@ import { fetchBoms, deleteBom, loadSample, fetchSampleList } from '@/services/ap
 import type { Bom } from '@/types'
 import { AgGridReact } from 'ag-grid-react'
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
-import type { CellClickedEvent } from 'ag-grid-community'
+import type { RowClickedEvent } from 'ag-grid-community'
 
 ModuleRegistry.registerModules([AllCommunityModule])
 
@@ -75,7 +75,7 @@ export function BomsPage() {
     }
   }
 
-  const onRowClicked = useCallback((event: CellClickedEvent<Bom>) => {
+  const onRowClicked = useCallback((event: RowClickedEvent<Bom>) => {
     if (event.data) {
       navigate({ to: `/boms/${event.data.id}` })
     }
