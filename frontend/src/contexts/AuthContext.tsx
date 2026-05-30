@@ -14,6 +14,7 @@ interface AuthContextValue {
   isLoading: boolean
   login: () => void
   logout: () => Promise<void>
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -22,14 +23,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  const refreshUser = async () => {
+    const res = await fetch(`${API_BASE}/api/auth/me`, { credentials: 'include' })
+    if (res.ok) {
+      const data = await res.json()
+      setUser(data as AuthUser)
+    } else {
+      setUser(null)
+    }
+  }
+
   useEffect(() => {
-    fetch(`${API_BASE}/api/auth/me`, { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data) {
-          setUser(data as AuthUser)
-        }
-      })
+    refreshUser()
       .catch(() => {
         // Silently ignore auth check failures
       })
@@ -50,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

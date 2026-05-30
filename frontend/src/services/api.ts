@@ -42,3 +42,17 @@ export async function deleteMe(): Promise<{ status: string }> {
   }
   return res.json()
 }
+
+export async function uploadAvatar(file: File): Promise<{ id: string; email: string; name: string | null; avatar_url: string | null }> {
+  const formData = new FormData()
+  formData.append('file', file)
+  const res = await apiFetch('/api/auth/avatar', {
+    method: 'POST',
+    body: formData,
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || 'Failed to upload avatar')
+  }
+  return res.json()
+}

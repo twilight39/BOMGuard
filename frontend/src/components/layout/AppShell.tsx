@@ -3,7 +3,6 @@ import { Link, useRouterState } from '@tanstack/react-router'
 import { Outlet } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/AuthContext'
-import { useTheme } from '@/contexts/ThemeContext'
 import { UserSettingsModal } from '@/components/user/UserSettingsModal'
 
 const navItems = [
@@ -77,20 +76,6 @@ function Breadcrumbs() {
   )
 }
 
-function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme()
-  return (
-    <button
-      onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-      className="h-7 w-7 rounded-md border flex items-center justify-center text-xs text-muted-foreground hover:bg-muted transition-colors"
-      aria-label="Toggle theme"
-      title="Toggle theme"
-    >
-      {resolvedTheme === 'dark' ? '☀' : '☾'}
-    </button>
-  )
-}
-
 function UserAvatar({ name, email, avatarUrl }: { name: string | null; email: string; avatarUrl: string | null }) {
   const initial = (name || email).charAt(0).toUpperCase()
   if (avatarUrl) {
@@ -121,7 +106,7 @@ function UserSection() {
         <div className="space-y-3">
           <button
             onClick={() => setModalOpen(true)}
-            className="w-full flex items-center justify-center gap-3 rounded-md hover:bg-muted/50 transition-colors py-1.5 px-2"
+            className="w-full flex items-center justify-start gap-3 rounded-md hover:bg-muted/50 transition-colors py-1.5 px-2"
           >
             <UserAvatar
               name={user.name}
@@ -137,29 +122,21 @@ function UserSection() {
               </div>
             </div>
           </button>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex-1 bg-muted/50 hover:bg-muted"
-              onClick={logout}
-            >
-              Logout
-            </Button>
-            <ThemeToggle />
-          </div>
-          <UserSettingsModal open={modalOpen} onClose={() => setModalOpen(false)} />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full bg-muted/50 hover:bg-muted"
+            onClick={logout}
+          >
+            Logout
+          </Button>
         </div>
       ) : (
-        <div className="space-y-3">
-          <Button variant="outline" size="sm" className="w-full" onClick={login}>
-            Sign in with Google
-          </Button>
-          <div className="flex justify-center">
-            <ThemeToggle />
-          </div>
-        </div>
+        <Button variant="outline" size="sm" className="w-full" onClick={login}>
+          Sign in with Google
+        </Button>
       )}
+      <UserSettingsModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </div>
   )
 }

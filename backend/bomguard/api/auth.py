@@ -1,9 +1,11 @@
 """Authentication endpoints via WorkOS (Google OAuth)."""
 
+import mimetypes
+import os
 import secrets
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -163,3 +165,51 @@ async def delete_me(
 
     request.session.clear()
     return {"status": "deleted"}
+
+
+AVATARS_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "static", "avatars")
+os.makedirs(AVATARS_DIR, exist_ok=True)
+
+
+@router.post("/avatar")
+async def upload_avatar(
+    request: Request,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Upload a profile picture."""
+    user_id = request.session.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    user = db.query(User).filter_by(id=user_id).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    content_type = file.content_type or ""
+    if not content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+
+    ext = mimetypes.guess_extension(content_type) or ".png"
+    filename = f"{user_id}{ext}"
+    filepath = os.path.join(AVATARS_DIR, filename)
+
+    contents = await file.read()
+    if len(contents) > 2 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image must be under 2MB")
+
+    with open(filepath, "wb") as f:
+        f.write(contents)
+
+    avatar_url = f"/static/avatars/{filename}"
+    user.avatar_url = avatar_url
+    db.commit()
+
+    request.session["avatar_url"] = avatar_url
+
+    return {
+        "id": user.id,
+        "email": user.email,
+        "name": user.name,
+        "avatar_url": user.avatar_url,
+    }

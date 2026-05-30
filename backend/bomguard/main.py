@@ -7,6 +7,7 @@ from alembic import command
 from alembic.config import Config
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from bomguard.api.admin import router as admin_router
@@ -83,6 +84,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(substances_router)
     app.include_router(ask_router)
     app.include_router(admin_router)
+
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 
     @app.get("/api/health", response_model=HealthCheckResponse)
     async def health_check() -> HealthCheckResponse:
