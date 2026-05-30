@@ -1,5 +1,6 @@
 """Pydantic settings for BOMGuard."""
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,6 +18,7 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:3000", "http://localhost:5173"]
 
     gemini_api_key: str | None = None
+    openrouter_api_key: str | None = Field(default=None, validation_alias="openrouter_key")
     mlflow_tracking_uri: str = "http://localhost:5000"
 
     # WorkOS auth

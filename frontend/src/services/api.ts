@@ -134,3 +134,27 @@ export async function fetchScanResults(bomId: number): Promise<ScanResult[]> {
   const data = await handleResponse<unknown>(res)
   return camelize<ScanResult[]>(data)
 }
+
+export interface AskSource {
+  id: number
+  substance_id: number | null
+  regulation_id: string | null
+  summary_text: string
+}
+
+export interface AskResponse {
+  answer: string
+  sources: AskSource[]
+}
+
+export async function askQuestion(question: string): Promise<AskResponse> {
+  const res = await fetch(`${API_BASE}/api/ask/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question }),
+  })
+  if (!res.ok) {
+    throw new Error(`Ask failed: ${res.status}`)
+  }
+  return res.json()
+}

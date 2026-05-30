@@ -305,3 +305,29 @@ def get_split_strategy(dates: pd.Series) -> tuple:
 - At under 100 substances per regulation, the file I/O overhead is negligible (~1ms per load).
 
 **Trade-off**: Manual curation requires human effort to keep lists current. Mitigation: the `last_updated` field in each JSON file makes staleness visible, and the validation script enforces data quality (CAS format, no duplicates, required fields).
+
+---
+
+## 17. LLM: Dual-Provider Setup (Gemini Embeddings + OpenRouter Chat)
+
+**Decision**: Use Google Gemini for embeddings (`text-embedding-004`, 768-dim) and OpenRouter for chat inference (Claude 3.5 Sonnet as default).
+
+**Alternatives considered**:
+- Single provider (Gemini for both embeddings and chat)
+- Single provider (OpenRouter for both — but OpenRouter has limited embedding model support)
+- Local sentence-transformers for embeddings + OpenRouter for chat
+
+**Rationale**:
+- The database schema already fixes embedding dimensions at 768 via pgvector's `Vector(768)`. Gemini `text-embedding-004` produces exactly 768 dimensions, so no migration is needed.
+- OpenRouter provides access to frontier chat models (Claude 3.5 Sonnet, GPT-4o, Llama 3.1) through a single API key and OpenAI-compatible endpoint. This allows model switching without client rewrites.
+- OpenRouter does not natively support high-quality embedding models. The few embedding models available on OpenRouter would require schema migrations if dimensions differed.
+- Local sentence-transformers (e.g., `all-mpnet-base-v2` at 768-dim) would eliminate API costs but add Python runtime dependencies (PyTorch/ONNX) and CPU load on the 4GB VPS.
+- The dual-provider setup costs ~$0.50-2.00/month: negligible embedding costs (Gemini) + ~$0.30-1.50/month for chat (OpenRouter).
+
+**Trade-off**: Two API keys to manage and two upstream dependencies. Mitigation: both services are wrapped behind the `RegulatoryLLMService` interface. If either provider becomes unavailable, the code path is localized and can be swapped with minimal changes.
+
+**Implementation**:
+- `OpenRouterClient` (`backend/bomguard/services/openrouter_client.py`) handles streaming and non-streaming chat with exponential backoff on 429s.
+- `SummaryGenerator` (`backend/bomguard/services/summary_generator.py`) generates plain-language summaries via OpenRouter and embeddings via Gemini.
+- `RegulatoryLLMService` (`backend/bomguard/services/llm_service.py`) runs the full RAG pipeline: embed query → pgvector cosine-similarity search → build context → stream/chat via OpenRouter.
+- Celery tasks (`backend/bomguard/enrichment/summary_tasks.py`) backfill summaries asynchronously so the LLM path never blocks HTTP requests.
