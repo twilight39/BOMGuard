@@ -72,10 +72,6 @@ async def auth_callback(
         )
         db.add(user)
         db.commit()
-    else:
-        # Update avatar_url on re-login in case it changed
-        user.avatar_url = workos_user.profile_picture_url
-        db.commit()
 
     request.session["user_id"] = user.id
     request.session["email"] = user.email
