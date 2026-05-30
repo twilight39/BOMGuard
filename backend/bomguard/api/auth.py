@@ -5,6 +5,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from bomguard.config import Settings
@@ -15,6 +16,10 @@ from bomguard.services.auth_service import WorkOSAuthService
 settings = Settings()
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
+
+
+class UserUpdateRequest(BaseModel):
+    name: str | None = None
 
 
 @router.get("/login")
@@ -60,8 +65,13 @@ async def auth_callback(
             id=workos_user.id,
             email=workos_user.email,
             name=workos_user.first_name or workos_user.email,
+            avatar_url=workos_user.profile_picture_url,
         )
         db.add(user)
+        db.commit()
+    else:
+        # Update avatar_url on re-login in case it changed
+        user.avatar_url = workos_user.profile_picture_url
         db.commit()
 
     request.session["user_id"] = user.id
@@ -79,13 +89,77 @@ async def logout(request: Request) -> dict[str, Any]:
 
 
 @router.get("/me")
-async def me(request: Request) -> dict[str, Any]:
+async def me(request: Request, db: Session = Depends(get_db)) -> dict[str, Any]:
     """Return current user from session."""
     user_id = request.session.get("user_id")
     if not user_id:
         raise HTTPException(status_code=401, detail="Not authenticated")
+
+    user = db.query(User).filter_by(id=user_id).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+
     return {
-        "id": user_id,
-        "email": request.session.get("email"),
-        "name": request.session.get("name"),
+        "id": user.id,
+        "email": user.email,
+        "name": user.name,
+        "avatar_url": user.avatar_url,
     }
+
+
+@router.patch("/me")
+async def update_me(
+    request: Request,
+    body: UserUpdateRequest,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Update current user's profile."""
+    user_id = request.session.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    user = db.query(User).filter_by(id=user_id).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    if body.name is not None:
+        user.name = body.name
+        # Sync to WorkOS
+        auth_service = WorkOSAuthService()
+        auth_service.update_user(user_id, first_name=body.name)
+        request.session["name"] = body.name
+
+    db.commit()
+
+    return {
+        "id": user.id,
+        "email": user.email,
+        "name": user.name,
+        "avatar_url": user.avatar_url,
+    }
+
+
+@router.delete("/me")
+async def delete_me(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Delete current user's account."""
+    user_id = request.session.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    user = db.query(User).filter_by(id=user_id).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    # Delete from WorkOS
+    auth_service = WorkOSAuthService()
+    auth_service.delete_user(user_id)
+
+    # Delete from local DB
+    db.delete(user)
+    db.commit()
+
+    request.session.clear()
+    return {"status": "deleted"}

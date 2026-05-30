@@ -34,3 +34,21 @@ class WorkOSAuthService:
     def get_user(self, user_id: str) -> User:
         """Fetch user from WorkOS."""
         return self.client.user_management.get_user(user_id)
+
+    def update_user(
+        self,
+        user_id: str,
+        *,
+        first_name: str | None = None,
+        last_name: str | None = None,
+    ) -> User:
+        """Update user in WorkOS."""
+        return self.client.user_management.update_user(
+            id=user_id,
+            first_name=first_name,
+            last_name=last_name,
+        )
+
+    def delete_user(self, user_id: str) -> None:
+        """Delete user from WorkOS."""
+        self.client.user_management.delete_user(user_id)
