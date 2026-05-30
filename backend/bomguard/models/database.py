@@ -152,6 +152,34 @@ class RegulatoryChange(Base):
     )
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(String(50), primary_key=True)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[str | None] = mapped_column(String(255))
+    avatar_url: Mapped[str | None] = mapped_column(String(500))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    boms: Mapped[list["Bom"]] = relationship("Bom", back_populates="user")
+    preferences: Mapped["UserPreference | None"] = relationship(
+        "UserPreference", back_populates="user", uselist=False
+    )
+
+
+class UserPreference(Base):
+    __tablename__ = "user_preferences"
+
+    user_id: Mapped[str] = mapped_column(String(50), ForeignKey("users.id"), primary_key=True)
+    subscribed_regulation_ids: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    default_regulation_ids: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    email_notifications: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    user: Mapped["User"] = relationship("User", back_populates="preferences")
+
+
 class Bom(Base):
     __tablename__ = "boms"
 
@@ -162,10 +190,12 @@ class Bom(Base):
     file_format: Mapped[str | None] = mapped_column(String(20))
     total_parts: Mapped[int] = mapped_column(Integer, default=0)
     compliance_status: Mapped[str] = mapped_column(String(20), default="pending")
+    user_id: Mapped[str | None] = mapped_column(String(50), ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
 
+    user: Mapped["User | None"] = relationship("User", back_populates="boms")
     parts: Mapped[list["BomPart"]] = relationship("BomPart", back_populates="bom")
     scan_results: Mapped[list["ScanResult"]] = relationship("ScanResult", back_populates="bom")
 

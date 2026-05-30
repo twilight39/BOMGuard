@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from sqlalchemy.orm import Session
 
 from bomguard.db import get_db
@@ -18,10 +18,16 @@ router = APIRouter(prefix="/api/boms", tags=["BOMs"])
 
 
 @router.post("/upload", response_model=BomUploadResponse)
-async def upload_bom(file: UploadFile, db: Session = Depends(get_db)) -> BomUploadResponse:
+async def upload_bom(
+    file: UploadFile,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> BomUploadResponse:
     """Upload a BOM file (CSV or XLSX)."""
     if not file.filename:
         raise HTTPException(status_code=400, detail="Filename is required.")
+
+    user_id = request.session.get("user_id")
 
     contents = await file.read()
     try:
@@ -38,6 +44,7 @@ async def upload_bom(file: UploadFile, db: Session = Depends(get_db)) -> BomUplo
         file_format=file_format,
         total_parts=len(parts),
         compliance_status="pending",
+        user_id=user_id,
     )
     db.add(bom)
     db.flush()  # Get bom.id
@@ -58,32 +65,52 @@ async def upload_bom(file: UploadFile, db: Session = Depends(get_db)) -> BomUplo
 
     db.commit()
 
-    # TODO: queue async Celery scan task when scan branch is ready
     return BomUploadResponse(id=bom.id, filename=file.filename, status="pending")
 
 
 @router.get("/", response_model=list[BomSchema])
-async def list_boms(db: Session = Depends(get_db)) -> list[BomSchema]:
-    """List all uploaded BOMs ordered by creation date descending."""
-    boms = db.query(Bom).order_by(Bom.created_at.desc()).all()
+async def list_boms(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> list[BomSchema]:
+    """List current user's BOMs ordered by creation date descending."""
+    user_id = request.session.get("user_id")
+    query = db.query(Bom)
+    if user_id:
+        query = query.filter(Bom.user_id == user_id)
+    boms = query.order_by(Bom.created_at.desc()).all()
     return [BomSchema.model_validate(b) for b in boms]
 
 
 @router.get("/{bom_id}", response_model=BomDetailSchema)
-async def get_bom(bom_id: int, db: Session = Depends(get_db)) -> BomDetailSchema:
+async def get_bom(
+    bom_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> BomDetailSchema:
     """Get BOM metadata and parts."""
+    user_id = request.session.get("user_id")
     bom = db.query(Bom).filter(Bom.id == bom_id).first()
     if not bom:
         raise HTTPException(status_code=404, detail="BOM not found.")
+    if user_id and bom.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to view this BOM.")
     return BomDetailSchema.model_validate(bom)
 
 
 @router.delete("/{bom_id}")
-async def delete_bom(bom_id: int, db: Session = Depends(get_db)) -> dict[str, Any]:
+async def delete_bom(
+    bom_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
     """Delete a BOM and its parts."""
+    user_id = request.session.get("user_id")
     bom = db.query(Bom).filter(Bom.id == bom_id).first()
     if not bom:
         raise HTTPException(status_code=404, detail="BOM not found.")
+    if user_id and bom.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this BOM.")
     db.delete(bom)
     db.commit()
     return {"id": bom_id, "deleted": True}

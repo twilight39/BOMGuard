@@ -1,6 +1,9 @@
 import * as React from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { Outlet } from '@tanstack/react-router'
+import { Button } from '@/components/ui/button'
+import { useAuth } from '@/contexts/AuthContext'
+import { UserSettingsModal } from '@/components/user/UserSettingsModal'
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: '◈' },
@@ -73,6 +76,71 @@ function Breadcrumbs() {
   )
 }
 
+function UserAvatar({ name, email, avatarUrl }: { name: string | null; email: string; avatarUrl: string | null }) {
+  const initial = (name || email).charAt(0).toUpperCase()
+  if (avatarUrl) {
+    return (
+      <img
+        src={avatarUrl}
+        alt=""
+        className="h-9 w-9 rounded-full object-cover border"
+      />
+    )
+  }
+  return (
+    <div className="h-9 w-9 rounded-full bg-muted border flex items-center justify-center text-xs font-semibold text-muted-foreground">
+      {initial}
+    </div>
+  )
+}
+
+function UserSection() {
+  const { user, isLoading, login, logout } = useAuth()
+  const [modalOpen, setModalOpen] = React.useState(false)
+
+  return (
+    <div className="p-4 border-t">
+      {isLoading ? (
+        <div className="text-xs text-muted-foreground text-center">Loading…</div>
+      ) : user ? (
+        <div className="space-y-3">
+          <button
+            onClick={() => setModalOpen(true)}
+            className="w-full flex items-center justify-start gap-3 rounded-md hover:bg-muted/50 transition-colors py-1.5 px-2"
+          >
+            <UserAvatar
+              name={user.name}
+              email={user.email}
+              avatarUrl={user.avatar_url}
+            />
+            <div className="text-left leading-tight min-w-0">
+              <div className="text-sm font-medium truncate">
+                {user.name || user.email}
+              </div>
+              <div className="text-xs text-muted-foreground truncate">
+                {user.email}
+              </div>
+            </div>
+          </button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full bg-muted/50 hover:bg-muted"
+            onClick={logout}
+          >
+            Logout
+          </Button>
+        </div>
+      ) : (
+        <Button variant="outline" size="sm" className="w-full" onClick={login}>
+          Sign in with Google
+        </Button>
+      )}
+      <UserSettingsModal open={modalOpen} onClose={() => setModalOpen(false)} />
+    </div>
+  )
+}
+
 export function AppShell() {
   const router = useRouterState()
   const currentPath = router.location.pathname
@@ -106,9 +174,7 @@ export function AppShell() {
             )
           })}
         </nav>
-        <div className="p-4 border-t text-xs text-muted-foreground">
-          v0.1.0 · feat/frontend-shell
-        </div>
+        <UserSection />
       </aside>
 
       {/* Main */}

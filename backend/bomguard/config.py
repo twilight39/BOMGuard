@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     gemini_api_key: str | None = None
     mlflow_tracking_uri: str = "http://localhost:5000"
 
-    # WorkOS auth (planned)
+    # WorkOS auth
     workos_api_key: str | None = None
     workos_client_id: str | None = None
+
+    # Session cookie signing (required for auth)
+    secret_key: str = "dev-secret-change-in-prod"
+    frontend_url: str = "http://localhost:3000"

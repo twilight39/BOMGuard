@@ -78,6 +78,25 @@ class BomUploadResponse(BaseModel):
     id: int
     filename: str
     status: str
+    user_id: str | None = None
+
+
+class UserSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    email: str
+    name: str | None = None
+    avatar_url: str | None = None
+
+
+class UserPreferenceSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    user_id: str
+    subscribed_regulation_ids: list[str] = []
+    default_regulation_ids: list[str] = []
+    email_notifications: bool = True
 
 
 class HealthCheckResponse(BaseModel):

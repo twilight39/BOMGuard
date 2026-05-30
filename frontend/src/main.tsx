@@ -1,9 +1,12 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import './index.css'
 
 import { routeTree } from './routeTree.gen'
+import { AuthProvider } from '@/contexts/AuthContext'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 
 const router = createRouter({ routeTree })
 
@@ -15,6 +18,12 @@ declare module '@tanstack/react-router' {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <TooltipProvider delayDuration={150}>
+      <ThemeProvider>
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
+      </ThemeProvider>
+    </TooltipProvider>
   </StrictMode>,
 )
