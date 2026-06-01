@@ -43,10 +43,10 @@ export function BomDetailPage() {
     try {
       const [bomData, resultData] = await Promise.all([
         fetchBom(id),
-        fetchScanResults(id).catch(() => ({ bomId: id, status: 'pending', results: [] as ScanResult[] })),
+        fetchScanResults(id).catch(() => [] as ScanResult[]),
       ])
       setBom(bomData)
-      setScanResults(resultData.results)
+      setScanResults(resultData)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load BOM')
     } finally {

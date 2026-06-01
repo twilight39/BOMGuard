@@ -31,7 +31,7 @@ export function ScanResultPage() {
         fetchScanResults(id),
       ])
       setBom(bomData)
-      setResults(resultData.results)
+      setResults(resultData)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load')
     } finally {

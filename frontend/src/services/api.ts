@@ -129,12 +129,8 @@ export async function triggerScan(bomId: number): Promise<{ bom_id: number; stat
   return handleResponse<{ bom_id: number; status: string }>(res)
 }
 
-export async function fetchScanResults(bomId: number): Promise<{
-  bomId: number
-  status: string
-  results: ScanResult[]
-}> {
+export async function fetchScanResults(bomId: number): Promise<ScanResult[]> {
   const res = await apiFetch(`/api/scan/${bomId}/result`)
   const data = await handleResponse<unknown>(res)
-  return camelize<{ bomId: number; status: string; results: ScanResult[] }>(data)
+  return camelize<ScanResult[]>(data)
 }
