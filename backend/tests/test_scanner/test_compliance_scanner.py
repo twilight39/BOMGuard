@@ -121,10 +121,9 @@ class TestComplianceScanner:
         assert "7732-18-5" not in cas_list
         assert bom.compliance_status == "flagged"
 
-    def test_scan_no_hits_returns_clean(self, db: Session, restrictions: None) -> None:
-        """Scanner should mark BOM as clean when no restricted CAS is found.
-        Unknown CAS numbers are tracked but don't affect compliance status."""
-        bom = Bom(name="Clean BOM", source_type="upload", total_parts=1)
+    def test_scan_unknown_cas_returns_review(self, db: Session, restrictions: None) -> None:
+        """Scanner should mark BOM as review when only unknown CAS numbers are found."""
+        bom = Bom(name="Unknown CAS BOM", source_type="upload", total_parts=1)
         db.add(bom)
         db.commit()
 
@@ -143,7 +142,7 @@ class TestComplianceScanner:
         assert len(hits) == 1
         assert hits[0].hit_type == "unknown_cas"
         assert hits[0].severity == "unknown"
-        assert bom.compliance_status == "clean"
+        assert bom.compliance_status == "review"
 
     def test_scan_clears_old_results(self, db: Session, restrictions: None) -> None:
         """Re-scanning should replace old results, not append."""

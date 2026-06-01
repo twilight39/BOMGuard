@@ -99,9 +99,12 @@ class ComplianceScanner:
 
         # Update BOM compliance status
         known_hits = [h for h in hits if h.hit_type != "unknown_cas"]
+        unknown_hits = [h for h in hits if h.hit_type == "unknown_cas"]
         if known_hits:
             critical_count = sum(1 for h in known_hits if h.severity == "critical")
             bom.compliance_status = "flagged" if critical_count > 0 else "review"
+        elif unknown_hits:
+            bom.compliance_status = "review"
         else:
             bom.compliance_status = "clean"
 
