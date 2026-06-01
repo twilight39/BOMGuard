@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { fetchBoms, triggerScan } from "@/services/api";
 import type { Bom } from "@/types";
 import { useAgGridTheme } from "@/hooks/useAgGridTheme";
+import { ScanSummaryModal } from "@/components/scan/ScanSummaryModal";
 import { AgGridReact } from "ag-grid-react";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
@@ -28,7 +29,7 @@ function ScanActionCell(props: ScanActionCellProps) {
         )
         : (
           <span
-            className="font-semibold hover:font-black text-primary cursor-pointer underline select-none"
+            className="font-semibold text-primary cursor-pointer underline select-none"
             onClick={(e) => {
               e.stopPropagation();
               if (!props.scanningAll) props.onScan(bom.id);
@@ -41,6 +42,13 @@ function ScanActionCell(props: ScanActionCellProps) {
   );
 }
 
+interface ScanSummary {
+  bomId: number;
+  name: string;
+  status: string;
+  hits: number;
+}
+
 function ScanNewPage() {
   const agGridTheme = useAgGridTheme();
   const navigate = useNavigate();
@@ -49,6 +57,8 @@ function ScanNewPage() {
   const [scanningId, setScanningId] = useState<number | null>(null);
   const [scanningAll, setScanningAll] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [summaries, setSummaries] = useState<ScanSummary[]>([]);
+  const [showSummary, setShowSummary] = useState(false);
 
   useEffect(() => {
     fetchBoms()
@@ -74,8 +84,17 @@ function ScanNewPage() {
     if (ids.length === 0) return;
     setScanningAll(true);
     try {
-      await Promise.all(ids.map((id) => triggerScan(id)));
-      navigate({ to: `/scan/${ids[0]}` });
+      const results = await Promise.all(ids.map((id) => triggerScan(id)));
+      const nameMap = new Map(boms.map((b) => [b.id, b.name]));
+      setSummaries(
+        results.map((r) => ({
+          bomId: r.bom_id,
+          name: nameMap.get(r.bom_id) || `BOM #${r.bom_id}`,
+          status: r.compliance_status,
+          hits: r.hits_found,
+        })),
+      );
+      setShowSummary(true);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Batch scan failed");
     } finally {
@@ -111,8 +130,15 @@ function ScanNewPage() {
       {
         headerName: "Status",
         field: "complianceStatus",
-        width: 120,
-        valueFormatter: (p) => p.value,
+        width: 140,
+        valueFormatter: (p) => {
+          const status = p.value as string;
+          const hits = p.data?.hitCount ?? 0;
+          if (status === "flagged" || status === "review") {
+            return `${status} (${hits})`;
+          }
+          return status;
+        },
         cellClass: (p) =>
           p.value === "flagged"
             ? "text-destructive font-medium"
@@ -147,71 +173,83 @@ function ScanNewPage() {
     : "Scan All";
 
   return (
-    <div className="flex flex-col h-full p-6 gap-4">
-      <div className="flex items-center justify-between shrink-0">
-        <div>
-          <h1 className="text-2xl font-heading font-bold">Scan</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Select BOMs to run a compliance scan, or click Scan on a specific
-            row.
-          </p>
+    <>
+      <div className="flex flex-col h-full p-6 gap-4">
+        <div className="flex items-center justify-between shrink-0">
+          <div>
+            <h1 className="text-2xl font-heading font-bold">Scan</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Select BOMs to run a compliance scan, or click Scan on a specific
+              row.
+            </p>
+          </div>
+          <Button
+            onClick={handleScanAll}
+            disabled={scanningAll || boms.length === 0}
+          >
+            {scanningAll
+              ? (
+                <span className="inline-flex items-center gap-2">
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                  Scanning…
+                </span>
+              )
+              : scanLabel}
+          </Button>
         </div>
-        <Button
-          onClick={handleScanAll}
-          disabled={scanningAll || boms.length === 0}
-        >
-          {scanningAll
+
+        <div className="flex-1 min-h-0 rounded-lg border bg-card overflow-hidden">
+          {loading
             ? (
-              <span className="inline-flex items-center gap-2">
-                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                Scanning…
-              </span>
+              <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                Loading...
+              </div>
             )
-            : scanLabel}
-        </Button>
+            : boms.length === 0
+            ? (
+              <div className="h-full flex flex-col items-center justify-center">
+                <p className="text-muted-foreground text-sm">
+                  No BOMs available.
+                </p>
+                <p className="text-muted-foreground text-xs mt-1">
+                  Upload a BOM first, or load a sample from the BOMs page.
+                </p>
+              </div>
+            )
+            : (
+              <div className="h-full">
+                <AgGridReact
+                  theme={agGridTheme}
+                  rowData={boms}
+                  columnDefs={columnDefs}
+                  getRowId={(params) => String(params.data.id)}
+                  rowSelection={{
+                    mode: "multiRow",
+                    checkboxes: true,
+                    headerCheckbox: true,
+                  }}
+                  onSelectionChanged={onSelectionChanged}
+                  onRowClicked={(event) => {
+                    if (event.node) {
+                      event.node.setSelected(!event.node.isSelected());
+                    }
+                  }}
+                />
+              </div>
+            )}
+        </div>
       </div>
 
-      <div className="flex-1 min-h-0 rounded-lg border bg-card overflow-hidden">
-        {loading
-          ? (
-            <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
-              Loading...
-            </div>
-          )
-          : boms.length === 0
-          ? (
-            <div className="h-full flex flex-col items-center justify-center">
-              <p className="text-muted-foreground text-sm">
-                No BOMs available.
-              </p>
-              <p className="text-muted-foreground text-xs mt-1">
-                Upload a BOM first, or load a sample from the BOMs page.
-              </p>
-            </div>
-          )
-          : (
-            <div className="h-full">
-              <AgGridReact
-                theme={agGridTheme}
-                rowData={boms}
-                columnDefs={columnDefs}
-                getRowId={(params) => String(params.data.id)}
-                rowSelection={{
-                  mode: "multiRow",
-                  checkboxes: true,
-                  headerCheckbox: true,
-                }}
-                onSelectionChanged={onSelectionChanged}
-                onRowClicked={(event) => {
-                  if (event.node) {
-                    event.node.setSelected(!event.node.isSelected());
-                  }
-                }}
-              />
-            </div>
-          )}
-      </div>
-    </div>
+      <ScanSummaryModal
+        open={showSummary}
+        summaries={summaries}
+        onClose={() => setShowSummary(false)}
+        onViewResult={(bomId) => {
+          setShowSummary(false);
+          navigate({ to: `/scan/${bomId}` });
+        }}
+      />
+    </>
   );
 }
 

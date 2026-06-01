@@ -124,9 +124,9 @@ export async function fetchStats(): Promise<{ substances: number; regulations: n
   return handleResponse(res)
 }
 
-export async function triggerScan(bomId: number): Promise<{ bom_id: number; status: string }> {
+export async function triggerScan(bomId: number): Promise<{ bom_id: number; status: string; hits_found: number; compliance_status: string }> {
   const res = await apiFetch(`/api/scan/${bomId}`, { method: 'POST' })
-  return handleResponse<{ bom_id: number; status: string }>(res)
+  return handleResponse<{ bom_id: number; status: string; hits_found: number; compliance_status: string }>(res)
 }
 
 export async function fetchScanResults(bomId: number): Promise<ScanResult[]> {

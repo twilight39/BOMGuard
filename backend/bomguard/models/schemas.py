@@ -55,6 +55,7 @@ class BomSchema(BaseModel):
     compliance_status: str = "pending"
     user_id: str | None = None
     created_at: datetime | None = None
+    hit_count: int = 0
 
 
 class BomDetailSchema(BomSchema):
@@ -73,6 +74,13 @@ class ScanResultSchema(BaseModel):
     risk_score: float | None = None
     severity: str | None = None
     details: dict[str, Any] | None = None
+
+
+class ScanResultDetailSchema(ScanResultSchema):
+    """Scan result enriched with part metadata."""
+
+    part_number: str | None = None
+    part_description: str | None = None
 
 
 class BomUploadResponse(BaseModel):

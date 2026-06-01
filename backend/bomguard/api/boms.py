@@ -3,10 +3,11 @@
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from bomguard.db import get_db
-from bomguard.models.database import Bom, BomPart
+from bomguard.models.database import Bom, BomPart, ScanResult
 from bomguard.models.schemas import (
     BomDetailSchema,
     BomSchema,
@@ -108,7 +109,23 @@ async def list_boms(
     if user_id:
         query = query.filter(Bom.user_id == user_id)
     boms = query.order_by(Bom.created_at.desc()).all()
-    return [BomSchema.model_validate(b) for b in boms]
+
+    # Attach hit counts
+    if boms:
+        bom_ids = [b.id for b in boms]
+        hit_counts = {
+            row.bom_id: row.cnt
+            for row in db.query(ScanResult.bom_id, func.count().label("cnt"))
+            .filter(ScanResult.bom_id.in_(bom_ids))
+            .group_by(ScanResult.bom_id)
+            .all()
+        }
+        return [
+            BomSchema.model_validate(b).model_copy(update={"hit_count": hit_counts.get(b.id, 0)})
+            for b in boms
+        ]
+
+    return []
 
 
 @router.get("/{bom_id}", response_model=BomDetailSchema)

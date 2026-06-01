@@ -6,8 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from bomguard.db import get_db
-from bomguard.models.database import Bom, ScanResult
-from bomguard.models.schemas import ScanResultSchema
+from bomguard.models.database import Bom, BomPart, ScanResult
+from bomguard.models.schemas import ScanResultDetailSchema
 from bomguard.services.compliance_scanner import ComplianceScanner
 
 router = APIRouter(prefix="/api/scan", tags=["Scan"])
@@ -60,12 +60,12 @@ async def scan_status(
     }
 
 
-@router.get("/{bom_id}/result", response_model=list[ScanResultSchema])
+@router.get("/{bom_id}/result", response_model=list[ScanResultDetailSchema])
 async def scan_result(
     bom_id: int,
     request: Request,
     db: Session = Depends(get_db),
-) -> list[ScanResultSchema]:
+) -> list[ScanResultDetailSchema]:
     """Get full scan results for a BOM."""
     user_id = request.session.get("user_id")
     bom = db.query(Bom).filter(Bom.id == bom_id).first()
@@ -74,10 +74,27 @@ async def scan_result(
     if user_id and bom.user_id != user_id:
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    results = (
-        db.query(ScanResult)
+    rows = (
+        db.query(ScanResult, BomPart)
+        .outerjoin(BomPart, ScanResult.part_id == BomPart.id)
         .filter(ScanResult.bom_id == bom_id)
         .order_by(ScanResult.severity.desc(), ScanResult.cas_number)
         .all()
     )
-    return [ScanResultSchema.model_validate(r) for r in results]
+
+    return [
+        ScanResultDetailSchema(
+            id=sr.id,
+            bom_id=sr.bom_id,
+            part_id=sr.part_id,
+            regulation_id=sr.regulation_id,
+            cas_number=sr.cas_number,
+            hit_type=sr.hit_type,
+            risk_score=sr.risk_score,
+            severity=sr.severity,
+            details=sr.details,
+            part_number=bp.part_number if bp else None,
+            part_description=bp.description if bp else None,
+        )
+        for sr, bp in rows
+    ]

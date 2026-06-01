@@ -93,8 +93,15 @@ export function BomsPage() {
     {
       headerName: 'Status',
       field: 'complianceStatus',
-      width: 120,
-      valueFormatter: (p) => p.value,
+      width: 140,
+      valueFormatter: (p) => {
+        const status = p.value as string
+        const hits = p.data?.hitCount ?? 0
+        if (status === 'flagged' || status === 'review') {
+          return `${status} (${hits})`
+        }
+        return status
+      },
       cellClass: (p) =>
         p.value === 'flagged'
           ? 'text-destructive font-medium'
