@@ -21,22 +21,20 @@ function ScanActionCell(props: ScanActionCellProps) {
   if (!bom) return null
   const isScanning = props.scanningId === bom.id
   return (
-    <div className="flex items-center justify-center h-full">
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={isScanning || props.scanningAll}
-        onClick={(e) => {
-          e.stopPropagation()
-          props.onScan(bom.id)
-        }}
-      >
-        {isScanning ? (
-          <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        ) : (
-          'Scan'
-        )}
-      </Button>
+    <div className="flex items-center h-full px-2">
+      {isScanning ? (
+        <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      ) : (
+        <span
+          className="font-semibold text-primary cursor-pointer hover:underline select-none"
+          onClick={(e) => {
+            e.stopPropagation()
+            if (!props.scanningAll) props.onScan(bom.id)
+          }}
+        >
+          Scan
+        </span>
+      )}
     </div>
   )
 }
@@ -95,15 +93,6 @@ function ScanNewPage() {
 
   const columnDefs: ColDef<Bom>[] = useMemo(
     () => [
-      {
-        headerName: '',
-        width: 40,
-        pinned: 'left',
-        sortable: false,
-        filter: false,
-        suppressMovable: true,
-        resizable: false,
-      },
       { headerName: 'Name', field: 'name', flex: 2 },
       { headerName: 'Format', field: 'fileFormat', width: 100 },
       { headerName: 'Parts', field: 'totalParts', width: 100 },
