@@ -108,6 +108,8 @@ async def list_boms(
     query = db.query(Bom)
     if user_id:
         query = query.filter(Bom.user_id == user_id)
+    else:
+        query = query.filter(Bom.user_id.is_(None))
     boms = query.order_by(Bom.created_at.desc()).all()
 
     # Attach hit counts
@@ -139,7 +141,7 @@ async def get_bom(
     bom = db.query(Bom).filter(Bom.id == bom_id).first()
     if not bom:
         raise HTTPException(status_code=404, detail="BOM not found.")
-    if user_id and bom.user_id != user_id:
+    if bom.user_id is not None and bom.user_id != user_id:
         raise HTTPException(status_code=403, detail="Not authorized to view this BOM.")
     return BomDetailSchema.model_validate(bom)
 
@@ -155,7 +157,7 @@ async def delete_bom(
     bom = db.query(Bom).filter(Bom.id == bom_id).first()
     if not bom:
         raise HTTPException(status_code=404, detail="BOM not found.")
-    if user_id and bom.user_id != user_id:
+    if bom.user_id is not None and bom.user_id != user_id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this BOM.")
     db.delete(bom)
     db.commit()

@@ -51,7 +51,7 @@ def seeded_bom(db: Session) -> Bom:
     db.add(user)
     db.commit()
 
-    bom = Bom(name="Test BOM", source_type="upload", total_parts=1, user_id="user_123")
+    bom = Bom(name="Test BOM", source_type="upload", total_parts=1, user_id=None)
     db.add(bom)
     db.commit()
 

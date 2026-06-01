@@ -33,83 +33,87 @@ class ComplianceScanner:
         if not bom:
             raise ValueError(f"BOM {bom_id} not found")
 
-        # Load all regulations for reference
-        regulations = {r.id: r for r in self.db.query(Regulation).all()}
+        try:
+            # Load all regulations for reference
+            regulations = {r.id: r for r in self.db.query(Regulation).all()}
 
-        # Clear old scan results for this BOM
-        self.db.query(ScanResult).filter(ScanResult.bom_id == bom_id).delete()
+            # Clear old scan results for this BOM
+            self.db.query(ScanResult).filter(ScanResult.bom_id == bom_id).delete()
 
-        hits: list[ScanResult] = []
-        parts = self.db.query(BomPart).filter(BomPart.bom_id == bom_id).all()
+            hits: list[ScanResult] = []
+            parts = self.db.query(BomPart).filter(BomPart.bom_id == bom_id).all()
 
-        for part in parts:
-            if not part.cas_numbers:
-                continue
-
-            cas_list = [c.strip() for c in part.cas_numbers.split("|") if c.strip()]
-            for cas in cas_list:
-                substance = (
-                    self.db.query(Substance)
-                    .filter(Substance.cas_number == cas)
-                    .first()
-                )
-                if not substance:
-                    # Track unknown CAS so the user knows it couldn't be checked
-                    hit = ScanResult(
-                        bom_id=bom_id,
-                        part_id=part.id,
-                        cas_number=cas,
-                        hit_type="unknown_cas",
-                        risk_score=None,
-                        severity="unknown",
-                        details={
-                            "message": "CAS number not found in substance database — may require enrichment",
-                        },
-                    )
-                    self.db.add(hit)
-                    hits.append(hit)
+            for part in parts:
+                if not part.cas_numbers:
                     continue
 
-                statuses = (
-                    self.db.query(SubstanceRegulationStatus)
-                    .filter(SubstanceRegulationStatus.substance_id == substance.id)
-                    .all()
-                )
-
-                for status in statuses:
-                    if status.status == "not_restricted":
-                        continue
-                    severity = self._severity(status.status, regulations.get(status.regulation_id))
-                    hit = ScanResult(
-                        bom_id=bom_id,
-                        part_id=part.id,
-                        regulation_id=status.regulation_id,
-                        cas_number=cas,
-                        hit_type="direct_match",
-                        risk_score=1.0 if status.status == "restricted" else 0.5,
-                        severity=severity,
-                        details={
-                            "substance_name": substance.name,
-                            "status": status.status,
-                            "effective_date": status.effective_date.isoformat() if status.effective_date else None,
-                        },
+                cas_list = [c.strip() for c in part.cas_numbers.split("|") if c.strip()]
+                for cas in cas_list:
+                    substance = (
+                        self.db.query(Substance)
+                        .filter(Substance.cas_number == cas)
+                        .first()
                     )
-                    self.db.add(hit)
-                    hits.append(hit)
+                    if not substance:
+                        # Track unknown CAS so the user knows it couldn't be checked
+                        hit = ScanResult(
+                            bom_id=bom_id,
+                            part_id=part.id,
+                            cas_number=cas,
+                            hit_type="unknown_cas",
+                            risk_score=None,
+                            severity="unknown",
+                            details={
+                                "message": "CAS number not found in substance database — may require enrichment",
+                            },
+                        )
+                        self.db.add(hit)
+                        hits.append(hit)
+                        continue
 
-        # Update BOM compliance status
-        known_hits = [h for h in hits if h.hit_type != "unknown_cas"]
-        unknown_hits = [h for h in hits if h.hit_type == "unknown_cas"]
-        if known_hits:
-            critical_count = sum(1 for h in known_hits if h.severity == "critical")
-            bom.compliance_status = "flagged" if critical_count > 0 else "review"
-        elif unknown_hits:
-            bom.compliance_status = "review"
-        else:
-            bom.compliance_status = "clean"
+                    statuses = (
+                        self.db.query(SubstanceRegulationStatus)
+                        .filter(SubstanceRegulationStatus.substance_id == substance.id)
+                        .all()
+                    )
 
-        self.db.commit()
-        return hits
+                    for status in statuses:
+                        if status.status == "not_restricted":
+                            continue
+                        severity = self._severity(status.status, regulations.get(status.regulation_id))
+                        hit = ScanResult(
+                            bom_id=bom_id,
+                            part_id=part.id,
+                            regulation_id=status.regulation_id,
+                            cas_number=cas,
+                            hit_type="direct_match",
+                            risk_score=1.0 if status.status == "restricted" else 0.5,
+                            severity=severity,
+                            details={
+                                "substance_name": substance.name,
+                                "status": status.status,
+                                "effective_date": status.effective_date.isoformat() if status.effective_date else None,
+                            },
+                        )
+                        self.db.add(hit)
+                        hits.append(hit)
+
+            # Update BOM compliance status
+            known_hits = [h for h in hits if h.hit_type != "unknown_cas"]
+            unknown_hits = [h for h in hits if h.hit_type == "unknown_cas"]
+            if known_hits:
+                critical_count = sum(1 for h in known_hits if h.severity == "critical")
+                bom.compliance_status = "flagged" if critical_count > 0 else "review"
+            elif unknown_hits:
+                bom.compliance_status = "review"
+            else:
+                bom.compliance_status = "clean"
+
+            self.db.commit()
+            return hits
+        except Exception:
+            self.db.rollback()
+            raise
 
     @staticmethod
     def _severity(status: str, regulation: Regulation | None) -> str:

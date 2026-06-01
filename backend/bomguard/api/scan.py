@@ -24,7 +24,7 @@ async def trigger_scan(
     bom = db.query(Bom).filter(Bom.id == bom_id).first()
     if not bom:
         raise HTTPException(status_code=404, detail="BOM not found")
-    if user_id and bom.user_id != user_id:
+    if bom.user_id is not None and bom.user_id != user_id:
         raise HTTPException(status_code=403, detail="Not authorized to scan this BOM")
 
     scanner = ComplianceScanner(db)
@@ -49,7 +49,7 @@ async def scan_status(
     bom = db.query(Bom).filter(Bom.id == bom_id).first()
     if not bom:
         raise HTTPException(status_code=404, detail="BOM not found")
-    if user_id and bom.user_id != user_id:
+    if bom.user_id is not None and bom.user_id != user_id:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     hit_count = db.query(ScanResult).filter(ScanResult.bom_id == bom_id).count()
@@ -71,7 +71,7 @@ async def scan_result(
     bom = db.query(Bom).filter(Bom.id == bom_id).first()
     if not bom:
         raise HTTPException(status_code=404, detail="BOM not found")
-    if user_id and bom.user_id != user_id:
+    if bom.user_id is not None and bom.user_id != user_id:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     rows = (
