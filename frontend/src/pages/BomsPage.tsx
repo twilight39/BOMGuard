@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { fetchBoms, loadSample, fetchSampleList, uploadBom } from '@/services/api'
 import type { Bom } from '@/types'
+import { useAgGridTheme } from '@/hooks/useAgGridTheme'
 import { AgGridReact } from 'ag-grid-react'
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
 import type { ColDef } from 'ag-grid-community'
@@ -18,6 +19,7 @@ interface SampleMeta {
 }
 
 export function BomsPage() {
+  const agGridTheme = useAgGridTheme()
   const [boms, setBoms] = useState<Bom[]>([])
   const [loading, setLoading] = useState(true)
   const [samples, setSamples] = useState<SampleMeta[]>([])
@@ -186,9 +188,9 @@ export function BomsPage() {
             <p className="text-muted-foreground text-xs mt-1">Upload a CSV or XLSX to get started.</p>
           </div>
         ) : (
-          <div className="ag-theme-balham h-full">
+          <div className="h-full">
             <AgGridReact
-              theme="legacy"
+              theme={agGridTheme}
               rowData={boms}
               columnDefs={columnDefs}
               getRowId={(params) => String(params.data.id)}

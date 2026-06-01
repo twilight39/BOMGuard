@@ -3,6 +3,7 @@ import { useParams, useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { fetchBom, deleteBom, triggerScan, fetchScanResults } from '@/services/api'
 import type { BomDetail, BomPart, ScanResult } from '@/types'
+import { useAgGridTheme } from '@/hooks/useAgGridTheme'
 import { AgGridReact } from 'ag-grid-react'
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
 import type { ColDef } from 'ag-grid-community'
@@ -24,6 +25,7 @@ const statusBadge = (status: string) => {
 }
 
 export function BomDetailPage() {
+  const agGridTheme = useAgGridTheme()
   const { bomId } = useParams({ from: '/boms/$bomId' })
   const navigate = useNavigate()
   const [bom, setBom] = useState<BomDetail | null>(null)
@@ -178,9 +180,9 @@ export function BomDetailPage() {
 
       <div className="flex-1 min-h-0 rounded-lg border bg-card overflow-hidden flex flex-col">
         <div className="px-4 py-3 border-b font-medium text-sm shrink-0">Parts</div>
-        <div className="ag-theme-balham flex-1 min-h-0">
+        <div className="flex-1 min-h-0">
           <AgGridReact
-            theme="legacy"
+            theme={agGridTheme}
             rowData={bom.parts ?? []}
             columnDefs={partColumns}
             getRowId={(params) => String(params.data.id)}

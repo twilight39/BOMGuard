@@ -3,6 +3,7 @@ import { useParams, useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { fetchBom, triggerScan, fetchScanResults } from '@/services/api'
 import type { BomDetail, ScanResult } from '@/types'
+import { useAgGridTheme } from '@/hooks/useAgGridTheme'
 import { AgGridReact } from 'ag-grid-react'
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
 import type { ColDef } from 'ag-grid-community'
@@ -10,6 +11,7 @@ import type { ColDef } from 'ag-grid-community'
 ModuleRegistry.registerModules([AllCommunityModule])
 
 export function ScanResultPage() {
+  const agGridTheme = useAgGridTheme()
   const { bomId } = useParams({ from: '/scan/$bomId' })
   const navigate = useNavigate()
   const [bom, setBom] = useState<BomDetail | null>(null)
@@ -175,9 +177,9 @@ export function ScanResultPage() {
           <div className="px-4 py-3 border-b font-medium text-sm shrink-0">
             {results.length} hit{results.length !== 1 ? 's' : ''} found
           </div>
-          <div className="ag-theme-balham flex-1 min-h-0">
+          <div className="flex-1 min-h-0">
             <AgGridReact
-              theme="legacy"
+              theme={agGridTheme}
               rowData={results}
               columnDefs={resultColumns}
               getRowId={(params) => String(params.data.id)}

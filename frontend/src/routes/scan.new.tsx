@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { fetchBoms, triggerScan } from '@/services/api'
 import type { Bom } from '@/types'
+import { useAgGridTheme } from '@/hooks/useAgGridTheme'
 import { AgGridReact } from 'ag-grid-react'
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
 import type { ColDef, ICellRendererParams } from 'ag-grid-community'
@@ -41,6 +42,7 @@ function ScanActionCell(props: ScanActionCellProps) {
 }
 
 function ScanNewPage() {
+  const agGridTheme = useAgGridTheme()
   const navigate = useNavigate()
   const [boms, setBoms] = useState<Bom[]>([])
   const [loading, setLoading] = useState(true)
@@ -178,12 +180,12 @@ function ScanNewPage() {
             </p>
           </div>
         ) : (
-          <div className="ag-theme-balham h-full">
+          <div className="h-full">
             <AgGridReact
+              theme={agGridTheme}
               rowData={boms}
               columnDefs={columnDefs}
               getRowId={(params) => String(params.data.id)}
-              theme="legacy"
               rowSelection={{ mode: 'multiRow', checkboxes: true, headerCheckbox: true }}
               onSelectionChanged={onSelectionChanged}
               onRowClicked={(event) => {
