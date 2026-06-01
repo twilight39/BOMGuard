@@ -100,10 +100,11 @@ def _detect_columns(headers: list[str]) -> dict[str, str]:
     used = set()
 
     for canonical, aliases in COLUMN_ALIASES.items():
+        normalized_aliases = [_normalize_header(a) for a in aliases]
         for header, norm in normalized.items():
             if header in used:
                 continue
-            if norm in aliases:
+            if norm in normalized_aliases:
                 mapping[canonical] = header
                 used.add(header)
                 break
