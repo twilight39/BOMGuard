@@ -1,4 +1,18 @@
+import type { Bom, BomDetail, ScanResult } from '@/types'
+
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
+function camelize<T>(obj: unknown): T {
+  if (obj === null || obj === undefined) return obj as T
+  if (Array.isArray(obj)) return obj.map((item) => camelize(item)) as T
+  if (typeof obj !== 'object') return obj as T
+  const result: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(obj)) {
+    const camelKey = key.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase())
+    result[camelKey] = camelize(value)
+  }
+  return result as T
+}
 
 async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
   return fetch(`${API_BASE}${path}`, {
@@ -9,6 +23,14 @@ async function apiFetch(path: string, options: RequestInit = {}): Promise<Respon
       ...options.headers,
     },
   })
+}
+
+async function handleResponse<T>(res: Response): Promise<T> {
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(body.detail || `Request failed: ${res.status}`)
+  }
+  return res.json() as Promise<T>
 }
 
 export async function fetchHealth() {
@@ -55,4 +77,60 @@ export async function uploadAvatar(file: File): Promise<{ id: string; email: str
     throw new Error(err.detail || 'Failed to upload avatar')
   }
   return res.json()
+}
+
+export async function fetchBoms(): Promise<Bom[]> {
+  const res = await apiFetch('/api/boms/')
+  const data = await handleResponse<unknown>(res)
+  return camelize<Bom[]>(data)
+}
+
+export async function fetchBom(id: number): Promise<BomDetail> {
+  const res = await apiFetch(`/api/boms/${id}`)
+  const data = await handleResponse<unknown>(res)
+  return camelize<BomDetail>(data)
+}
+
+export async function uploadBom(file: File): Promise<{ id: number; filename: string; status: string }> {
+  const formData = new FormData()
+  formData.append('file', file)
+  const res = await apiFetch('/api/boms/upload', {
+    method: 'POST',
+    body: formData,
+  })
+  return handleResponse<{ id: number; filename: string; status: string }>(res)
+}
+
+export async function deleteBom(id: number): Promise<{ id: number; deleted: boolean }> {
+  const res = await apiFetch(`/api/boms/${id}`, {
+    method: 'DELETE',
+  })
+  return handleResponse<{ id: number; deleted: boolean }>(res)
+}
+
+export async function loadSample(sampleId: string): Promise<Bom> {
+  const res = await apiFetch(`/api/boms/samples/${sampleId}`, { method: 'POST' })
+  const data = await handleResponse<unknown>(res)
+  return camelize<Bom>(data)
+}
+
+export async function fetchSampleList(): Promise<Array<{ id: string; name: string; filename: string }>> {
+  const res = await apiFetch('/api/boms/samples')
+  return handleResponse(res)
+}
+
+export async function fetchStats(): Promise<{ substances: number; regulations: number; boms: number }> {
+  const res = await apiFetch('/api/admin/ml/stats')
+  return handleResponse(res)
+}
+
+export async function triggerScan(bomId: number): Promise<{ bom_id: number; status: string; hits_found: number; compliance_status: string }> {
+  const res = await apiFetch(`/api/scan/${bomId}`, { method: 'POST' })
+  return handleResponse<{ bom_id: number; status: string; hits_found: number; compliance_status: string }>(res)
+}
+
+export async function fetchScanResults(bomId: number): Promise<ScanResult[]> {
+  const res = await apiFetch(`/api/scan/${bomId}/result`)
+  const data = await handleResponse<unknown>(res)
+  return camelize<ScanResult[]>(data)
 }

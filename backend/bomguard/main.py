@@ -42,11 +42,24 @@ def seed_regulations_if_empty() -> None:
         db.close()
 
 
+def seed_sample_boms_if_empty() -> None:
+    """Seed sample BOMs if none exist."""
+    from bomguard.db import SessionLocal
+    from bomguard.seed import seed_sample_boms
+
+    db = SessionLocal()
+    try:
+        seed_sample_boms(db)
+    finally:
+        db.close()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Application lifespan events."""
     run_migrations()
     seed_regulations_if_empty()
+    seed_sample_boms_if_empty()
     yield
 
 

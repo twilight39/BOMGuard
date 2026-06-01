@@ -1,5 +1,6 @@
 """Pydantic schemas for API request/response validation."""
 
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
@@ -28,18 +29,6 @@ class SubstanceSchema(BaseModel):
     smiles: str | None = None
 
 
-class BomSchema(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    name: str
-    description: str | None = None
-    source_type: str = "upload"
-    file_format: str | None = None
-    total_parts: int = 0
-    compliance_status: str = "pending"
-
-
 class BomPartSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -54,6 +43,25 @@ class BomPartSchema(BaseModel):
     cas_numbers: str | None = None
 
 
+class BomSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    description: str | None = None
+    source_type: str = "upload"
+    file_format: str | None = None
+    total_parts: int = 0
+    compliance_status: str = "pending"
+    user_id: str | None = None
+    created_at: datetime | None = None
+    hit_count: int = 0
+
+
+class BomDetailSchema(BomSchema):
+    parts: list[BomPartSchema] = []
+
+
 class ScanResultSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -66,6 +74,13 @@ class ScanResultSchema(BaseModel):
     risk_score: float | None = None
     severity: str | None = None
     details: dict[str, Any] | None = None
+
+
+class ScanResultDetailSchema(ScanResultSchema):
+    """Scan result enriched with part metadata."""
+
+    part_number: str | None = None
+    part_description: str | None = None
 
 
 class BomUploadResponse(BaseModel):
