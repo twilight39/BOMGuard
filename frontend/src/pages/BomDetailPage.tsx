@@ -180,7 +180,8 @@ export function BomDetailPage() {
         <div className="px-4 py-3 border-b font-medium text-sm shrink-0">Parts</div>
         <div className="ag-theme-balham flex-1 min-h-0">
           <AgGridReact
-            rowData={bom.parts}
+            theme="legacy"
+            rowData={bom.parts ?? []}
             columnDefs={partColumns}
             getRowId={(params) => String(params.data.id)}
           />

@@ -188,6 +188,7 @@ export function BomsPage() {
         ) : (
           <div className="ag-theme-balham h-full">
             <AgGridReact
+              theme="legacy"
               rowData={boms}
               columnDefs={columnDefs}
               getRowId={(params) => String(params.data.id)}

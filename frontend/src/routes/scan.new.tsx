@@ -96,8 +96,6 @@ function ScanNewPage() {
       {
         headerName: '',
         width: 40,
-        checkboxSelection: true,
-        headerCheckboxSelection: true,
         pinned: 'left',
         sortable: false,
         filter: false,
@@ -185,7 +183,8 @@ function ScanNewPage() {
               rowData={boms}
               columnDefs={columnDefs}
               getRowId={(params) => String(params.data.id)}
-              rowSelection={{ mode: 'multiRow' }}
+              theme="legacy"
+              rowSelection={{ mode: 'multiRow', checkboxes: true, headerCheckbox: true }}
               onSelectionChanged={onSelectionChanged}
               onRowClicked={(event) => {
                 if (event.node) {

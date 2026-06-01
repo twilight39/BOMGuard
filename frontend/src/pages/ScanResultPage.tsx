@@ -177,6 +177,7 @@ export function ScanResultPage() {
           </div>
           <div className="ag-theme-balham flex-1 min-h-0">
             <AgGridReact
+              theme="legacy"
               rowData={results}
               columnDefs={resultColumns}
               getRowId={(params) => String(params.data.id)}
