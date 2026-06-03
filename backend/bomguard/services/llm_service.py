@@ -4,6 +4,7 @@ import asyncio
 from typing import Any
 
 import google.generativeai as genai
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -11,7 +12,46 @@ from bomguard.config import Settings
 from bomguard.models.database import RegulatorySummary
 from bomguard.services.openrouter_client import OpenRouterClient
 
-RAG_SYSTEM_PROMPT = """You are BOMGuard, a regulatory compliance assistant for the electronics manufacturing industry. Answer the user's question based ONLY on the regulatory context provided below. If the context does not contain enough information, say so clearly. Cite specific regulations when possible.
+RAG_SYSTEM_INSTRUCTIONS = """You are BOMGuard, a regulatory compliance assistant for the electronics manufacturing industry.
+
+Regulations currently tracked:
+- EU REACH SVHC Candidate List (ECHA)
+- US State PFAS Restrictions
+- EU RoHS Directive 2011/65/EU
+- US TSCA Section 6(h) PBT
+- China RoHS 2 (SJ/T 11363)
+
+To add a new regulation, a developer must:
+1. Create a scraper module in backend/bomguard/ingestion/scrapers/
+2. Register it in backend/bomguard/ingestion/registry.py
+3. Run the scraper via the admin pipeline or Celery task
+
+Rules:
+- Get straight to the point. Do NOT start with phrases like "Based on the provided context" or "According to the information".
+- Use markdown formatting freely (**bold**, *italics*, bullet points) to make the answer readable.
+- If the context does not contain enough information, say so clearly.
+- Cite specific regulations when possible."""
+
+RAG_SYSTEM_PROMPT = """You are BOMGuard, a regulatory compliance assistant for the electronics manufacturing industry. Answer the user's question based ONLY on the regulatory context provided below.
+
+System context:
+The following regulations are currently tracked in BOMGuard:
+- EU REACH SVHC Candidate List (ECHA)
+- US State PFAS Restrictions
+- EU RoHS Directive 2011/65/EU
+- US TSCA Section 6(h) PBT
+- China RoHS 2 (SJ/T 11363)
+
+To add a new regulation, a developer must:
+1. Create a scraper module in backend/bomguard/ingestion/scrapers/
+2. Register it in backend/bomguard/ingestion/registry.py
+3. Run the scraper via the admin pipeline or Celery task
+
+Rules:
+- Get straight to the point. Do NOT start with phrases like "Based on the provided context" or "According to the information".
+- Use markdown formatting freely (**bold**, *italics*, bullet points) to make the answer readable.
+- If the context does not contain enough information, say so clearly.
+- Cite specific regulations when possible.
 
 Context:
 {context}
@@ -36,21 +76,22 @@ class RegulatoryLLMService:
         if self.gemini_api_key:
             genai.configure(api_key=self.gemini_api_key)  # type: ignore[reportAttributeAccessIssue]
 
-    def _embed_sync(self, text: str) -> list[float]:
-        """Generate a 768-dim Gemini embedding for text (synchronous)."""
-        if not self.gemini_api_key:
-            raise RuntimeError("Gemini API key is required for embeddings")
-        result = genai.embed_content(  # type: ignore[reportAttributeAccessIssue]
-            model="models/text-embedding-004",
-            content=text,
-            task_type="retrieval_query",
-        )
-        embedding: list[float] = result["embedding"]
-        return embedding
-
     async def _embed(self, text: str) -> list[float]:
-        """Async wrapper for embedding generation."""
-        return await asyncio.to_thread(self._embed_sync, text)
+        """Generate a 768-dim embedding for text.
+
+        Uses Gemini directly when a Gemini key is available,
+        otherwise falls back to OpenRouter's embedding endpoint.
+        """
+        if self.gemini_api_key:
+            result = await asyncio.to_thread(
+                genai.embed_content,  # type: ignore[reportAttributeAccessIssue]
+                model="models/text-embedding-004",
+                content=text,
+                task_type="retrieval_query",
+            )
+            embedding: list[float] = result["embedding"]
+            return embedding
+        return await self.openrouter.embed(text)
 
     def _search_similar_sync(
         self, db: Session, query_embedding: list[float], k: int = 5
@@ -60,7 +101,8 @@ class RegulatoryLLMService:
             db.query(RegulatorySummary)
             .order_by(
                 func.cosine_distance(
-                    RegulatorySummary.embedding, query_embedding
+                    RegulatorySummary.embedding,
+                    func.cast(query_embedding, Vector(768)),
                 )
             )
             .limit(k)
@@ -80,18 +122,32 @@ class RegulatoryLLMService:
             parts.append(f"[{i}] {s.summary_text}")
         return "\n\n".join(parts)
 
+    def _build_messages(
+        self,
+        question: str,
+        context: str,
+        history: list[dict[str, str]] | None = None,
+    ) -> list[dict[str, str]]:
+        """Build the messages array for OpenRouter."""
+        messages: list[dict[str, str]] = [
+            {"role": "system", "content": RAG_SYSTEM_INSTRUCTIONS},
+        ]
+        if history:
+            messages.extend(history)
+        messages.append(
+            {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {question}"}
+        )
+        return messages
+
     async def ask(
-        self, db: Session, question: str, model: str = "anthropic/claude-3.5-sonnet"
+        self, db: Session, question: str, model: str = "google/gemini-2.5-flash"
     ) -> dict[str, Any]:
         """RAG-based Q&A over regulatory summaries."""
         query_embedding = await self._embed(question)
         summaries = await self._search_similar(db, query_embedding, k=5)
         context = self._build_context(summaries)
-        prompt = RAG_SYSTEM_PROMPT.format(context=context, question=question)
-        answer = await self.openrouter.chat(
-            messages=[{"role": "user", "content": prompt}],
-            model=model,
-        )
+        messages = self._build_messages(question, context)
+        answer = await self.openrouter.chat(messages=messages, model=model)
         return {
             "answer": answer,
             "sources": [
@@ -109,11 +165,12 @@ class RegulatoryLLMService:
         self,
         db: Session,
         question: str,
-        model: str = "anthropic/claude-3.5-sonnet",
-    ) -> tuple[str, list[RegulatorySummary]]:
-        """Prepare a streaming RAG response. Returns context string and summaries."""
+        history: list[dict[str, str]] | None = None,
+        model: str = "google/gemini-2.5-flash",
+    ) -> tuple[list[dict[str, str]], list[RegulatorySummary]]:
+        """Prepare a streaming RAG response. Returns messages array and summaries."""
         query_embedding = await self._embed(question)
         summaries = await self._search_similar(db, query_embedding, k=5)
         context = self._build_context(summaries)
-        prompt = RAG_SYSTEM_PROMPT.format(context=context, question=question)
-        return prompt, summaries
+        messages = self._build_messages(question, context, history)
+        return messages, summaries

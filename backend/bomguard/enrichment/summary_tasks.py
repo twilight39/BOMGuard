@@ -1,5 +1,6 @@
 """Celery tasks for regulatory summary generation."""
 
+import asyncio
 from typing import Any
 
 from bomguard.celery_app import celery_app
@@ -32,10 +33,14 @@ def generate_regulatory_summaries(
     generator = _get_generator()
     db = SessionLocal()
     try:
-        summaries = generator.process_batch(db, batch_size=batch_size)
+        summaries = asyncio.run(
+            generator.process_batch(db, batch_size=batch_size)
+        )
         return {
             "generated": len(summaries),
-            "substance_ids": [s.substance_id for s in summaries if s.substance_id],
+            "substance_ids": [
+                s.substance_id for s in summaries if s.substance_id
+            ],
         }
     except Exception as exc:
         raise self.retry(exc=exc, countdown=60) from exc
@@ -51,7 +56,9 @@ def generate_all_summaries(batch_size: int = 50) -> dict[str, Any]:
     total_generated = 0
     try:
         while True:
-            batch = generator.process_batch(db, batch_size=batch_size)
+            batch = asyncio.run(
+                generator.process_batch(db, batch_size=batch_size)
+            )
             if not batch:
                 break
             total_generated += len(batch)

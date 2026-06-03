@@ -1,9 +1,12 @@
 """OpenRouter API client with streaming and retry support."""
 
+import logging
 from collections.abc import AsyncIterator
 from typing import Any
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 
 class OpenRouterClient:
@@ -28,7 +31,7 @@ class OpenRouterClient:
     async def chat(
         self,
         messages: list[dict[str, str]],
-        model: str = "anthropic/claude-3.5-sonnet",
+        model: str = "~google/gemini-flash-latest",
         temperature: float = 0.3,
         max_retries: int = 3,
     ) -> str:
@@ -53,16 +56,54 @@ class OpenRouterClient:
                     wait = 2**attempt
                     await asyncio.sleep(wait)
                     continue
+                if response.status_code >= 400:
+                    logger.error(
+                        "OpenRouter chat error: %s %s — %s",
+                        response.status_code,
+                        response.reason_phrase,
+                        response.text,
+                    )
                 response.raise_for_status()
                 data: dict[str, Any] = response.json()
                 return str(data["choices"][0]["message"]["content"])
 
         raise RuntimeError("OpenRouter chat failed after retries")
 
+    async def embed(
+        self,
+        text: str,
+        model: str = "google/gemini-embedding-001",
+        dimensions: int = 768,
+    ) -> list[float]:
+        """Generate embeddings via OpenRouter's OpenAI-compatible endpoint."""
+        payload: dict[str, Any] = {
+            "model": model,
+            "input": text,
+            "dimensions": dimensions,
+        }
+
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                f"{self.BASE_URL}/embeddings",
+                headers=self.headers,
+                json=payload,
+            )
+            if response.status_code >= 400:
+                logger.error(
+                    "OpenRouter embed error: %s %s — %s",
+                    response.status_code,
+                    response.reason_phrase,
+                    response.text,
+                )
+            response.raise_for_status()
+            data: dict[str, Any] = response.json()
+            embedding: list[float] = data["data"][0]["embedding"]
+            return embedding
+
     async def chat_stream(
         self,
         messages: list[dict[str, str]],
-        model: str = "anthropic/claude-3.5-sonnet",
+        model: str = "~google/gemini-flash-latest",
         temperature: float = 0.3,
     ) -> AsyncIterator[str]:
         """Send a streaming chat request and yield text deltas."""
@@ -73,18 +114,32 @@ class OpenRouterClient:
             "stream": True,
         }
 
-        async with httpx.AsyncClient(timeout=60.0) as client, client.stream(
-            "POST",
-            f"{self.BASE_URL}/chat/completions",
-            headers=self.headers,
-            json=payload,
-        ) as response:
+        async with (
+            httpx.AsyncClient(timeout=60.0) as client,
+            client.stream(
+                "POST",
+                f"{self.BASE_URL}/chat/completions",
+                headers=self.headers,
+                json=payload,
+            ) as response,
+        ):
+            try:
+                if isinstance(response.status_code, int) and response.status_code >= 400:
+                    body = await response.aread()
+                    logger.error(
+                        "OpenRouter stream error: %s %s — %s",
+                        response.status_code,
+                        response.reason_phrase,
+                        body.decode() if body else "",
+                    )
+            except TypeError:
+                pass
             response.raise_for_status()
             async for line in response.aiter_lines():
                 line = line.strip()
                 if not line or not line.startswith("data: "):
                     continue
-                data = line[len("data: "):]
+                data = line[len("data: ") :]
                 if data == "[DONE]":
                     break
                 try:

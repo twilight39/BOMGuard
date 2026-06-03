@@ -22,9 +22,7 @@ Molecular properties:
 Summary:"""
 
 
-def _build_restrictions_text(
-    db: Session, substance_id: int
-) -> str:
+def _build_restrictions_text(db: Session, substance_id: int) -> str:
     """Build a text description of restrictions for a substance."""
     statuses = (
         db.query(SubstanceRegulationStatus)
@@ -69,7 +67,7 @@ class SummaryGenerator:
         if gemini_api_key:
             genai.configure(api_key=gemini_api_key)  # type: ignore[reportAttributeAccessIssue]
 
-    def generate_summary(self, db: Session, substance: Substance) -> str:
+    async def generate_summary(self, db: Session, substance: Substance) -> str:
         """Generate a plain-language summary for a substance."""
         restrictions = _build_restrictions_text(db, substance.id)
         properties = _build_properties_text(substance)
@@ -81,21 +79,23 @@ class SummaryGenerator:
             restrictions=restrictions,
             properties=properties,
         )
-        import asyncio
+        return await self.openrouter.chat(messages=[{"role": "user", "content": prompt}])
 
-        return asyncio.run(self.openrouter.chat(messages=[{"role": "user", "content": prompt}]))
+    async def generate_embedding(self, text: str) -> list[float]:
+        """Generate a 768-dim embedding for text.
 
-    def generate_embedding(self, text: str) -> list[float]:
-        """Generate a 768-dim Gemini embedding for text."""
-        if not self.gemini_api_key:
-            raise RuntimeError("Gemini API key is required for embeddings")
-        result = genai.embed_content(  # type: ignore[reportAttributeAccessIssue]
-            model="models/text-embedding-004",
-            content=text,
-            task_type="retrieval_document",
-        )
-        embedding: list[float] = result["embedding"]
-        return embedding
+        Uses Gemini directly when a Gemini key is available,
+        otherwise falls back to OpenRouter's embedding endpoint.
+        """
+        if self.gemini_api_key:
+            result = genai.embed_content(  # type: ignore[reportAttributeAccessIssue]
+                model="models/text-embedding-004",
+                content=text,
+                task_type="retrieval_document",
+            )
+            embedding: list[float] = result["embedding"]
+            return embedding
+        return await self.openrouter.embed(text)
 
     def save_summary(
         self,
@@ -103,7 +103,7 @@ class SummaryGenerator:
         substance: Substance,
         summary_text: str,
         embedding: list[float],
-        model_used: str = "anthropic/claude-3.5-sonnet",
+        model_used: str = "~google/gemini-flash-latest",
     ) -> RegulatorySummary:
         """Save or update a regulatory summary in the database."""
         existing = (
@@ -132,7 +132,7 @@ class SummaryGenerator:
         db.refresh(summary)
         return summary
 
-    def process_substance(
+    async def process_substance(
         self, db: Session, substance: Substance, skip_existing: bool = True
     ) -> RegulatorySummary | None:
         """Generate and save a summary for a single substance."""
@@ -145,11 +145,11 @@ class SummaryGenerator:
             if existing:
                 return None
 
-        summary_text = self.generate_summary(db, substance)
-        embedding = self.generate_embedding(summary_text)
+        summary_text = await self.generate_summary(db, substance)
+        embedding = await self.generate_embedding(summary_text)
         return self.save_summary(db, substance, summary_text, embedding)
 
-    def process_batch(
+    async def process_batch(
         self, db: Session, batch_size: int = 50, skip_existing: bool = True
     ) -> list[RegulatorySummary]:
         """Process a batch of substances without summaries."""
@@ -168,7 +168,7 @@ class SummaryGenerator:
         results: list[RegulatorySummary] = []
         for substance in substances:
             try:
-                summary = self.process_substance(db, substance, skip_existing=False)
+                summary = await self.process_substance(db, substance, skip_existing=False)
                 if summary:
                     results.append(summary)
             except Exception:

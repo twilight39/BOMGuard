@@ -7,6 +7,7 @@ services:
       - DATABASE_URL=postgresql://bomguard:${DB_PASSWORD:-bomguard}@db:5432/bomguard
       - REDIS_URL=redis://redis:6379/0
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - MLFLOW_TRACKING_URI=http://mlflow:5000
       - WORKOS_API_KEY=${WORKOS_API_KEY:-}
       - WORKOS_CLIENT_ID=${WORKOS_CLIENT_ID:-}
@@ -62,12 +63,15 @@ services:
     restart: unless-stopped
 
   celery-worker:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
     command: celery -A bomguard.celery_app worker --loglevel=info --concurrency=2
     environment:
       - DATABASE_URL=postgresql://bomguard:${DB_PASSWORD:-bomguard}@db:5432/bomguard
       - REDIS_URL=redis://redis:6379/0
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy
@@ -76,7 +80,9 @@ services:
     restart: unless-stopped
 
   celery-beat:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
     command: celery -A bomguard.celery_app beat --loglevel=info
     environment:
       - DATABASE_URL=postgresql://bomguard:${DB_PASSWORD:-bomguard}@db:5432/bomguard
