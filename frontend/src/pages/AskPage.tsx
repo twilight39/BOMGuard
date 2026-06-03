@@ -1,5 +1,17 @@
 import { ChatInterface } from '@/components/ask/ChatInterface'
-import { askQuestion } from '@/services/api'
+
+const API_BASE = import.meta.env.VITE_API_URL || ''
+
+function getWsUrl(apiBase: string): string {
+  if (apiBase) {
+    const url = apiBase
+      .replace(/^http:\/\//, 'ws://')
+      .replace(/^https:\/\//, 'wss://')
+    return `${url}/api/ask/ws`
+  }
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${protocol}//${window.location.host}/api/ask/ws`
+}
 
 export function AskPage() {
   return (
@@ -12,7 +24,7 @@ export function AskPage() {
       </div>
       <div className="flex-1 min-h-0 px-6 pb-6">
         <div className="h-full rounded-xl border bg-card overflow-hidden">
-          <ChatInterface onSend={askQuestion} />
+          <ChatInterface wsUrl={getWsUrl(API_BASE)} />
         </div>
       </div>
     </div>
