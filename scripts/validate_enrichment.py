@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """Quick manual validation script for the enrichment pipeline.
 
-Run from repo root: cd backend && uv run python ../scripts/validate_enrichment.py
+Run from repo root:
+    uv run --directory backend python scripts/validate_enrichment.py
+
+Or with explicit env:
+    COMPTOX_API_KEY=your_key uv run --directory backend python scripts/validate_enrichment.py
 """
 
 import asyncio
@@ -24,6 +28,23 @@ def check_pubchem() -> None:
         print("LogP:", props.get("XLogP"))
         missing = await client.get_smiles("999-99-9")
         print("Missing CAS:", missing)
+
+    asyncio.run(main())
+
+
+def check_epa() -> None:
+    from bomguard.services.epa_client import EPACompToxClient
+
+    async def main() -> None:
+        client = EPACompToxClient()
+        props = await client.get_properties("64-17-5")
+        print("has_epa_data:", props.get("has_epa_data"))
+        print("bcf:", props.get("bcf"))
+        print("half_life_soil:", props.get("half_life_soil"))
+        print("lc50_fish:", props.get("lc50_fish"))
+        print("carcinogenicity_flag:", props.get("carcinogenicity_flag"))
+        missing = await client.get_properties("999-99-9")
+        print("Missing CAS has_epa_data:", missing.get("has_epa_data"))
 
     asyncio.run(main())
 
@@ -64,13 +85,16 @@ def main() -> int:
     section("1. PubChem live lookup")
     check_pubchem()
 
-    section("2. Morgan fingerprint + PCA")
+    section("2. EPA CompTox live lookup")
+    check_epa()
+
+    section("3. Morgan fingerprint + PCA")
     check_fingerprints()
 
-    section("3. RDKit descriptors")
+    section("4. RDKit descriptors")
     check_descriptors()
 
-    section("4. Celery task registration")
+    section("5. Celery task registration")
     check_celery()
 
     section("All checks passed")
