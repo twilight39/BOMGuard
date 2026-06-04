@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from bomguard.enrichment.fingerprints import compute_pca_for_batch
 from bomguard.models.database import Substance, SubstanceProperties
+from bomguard.services.epa_client import EPACompToxClient
 from bomguard.services.pubchem_client import PubChemClient
 
 
@@ -48,9 +49,15 @@ def _compute_rdkit_descriptors(smiles: str) -> dict[str, Any]:
 class EnrichmentPipeline:
     """Enrich substances with external molecular data."""
 
-    def __init__(self, db: Session, pubchem: PubChemClient | None = None) -> None:
+    def __init__(
+        self,
+        db: Session,
+        pubchem: PubChemClient | None = None,
+        epa: EPACompToxClient | None = None,
+    ) -> None:
         self.db = db
         self.pubchem = pubchem or PubChemClient()
+        self.epa = epa or EPACompToxClient()
 
     async def enrich_substance(self, substance: Substance) -> SubstanceProperties:
         """Fetch and compute all properties for a single substance.
@@ -78,6 +85,18 @@ class EnrichmentPipeline:
                 props.hba = pubchem_props.get("HBondAcceptorCount")
                 props.tpsa = pubchem_props.get("TPSA")
                 props.rotatable_bonds = pubchem_props.get("RotatableBondCount")
+
+            # Fetch EPA CompTox data
+            try:
+                epa_props = await self.epa.get_properties(substance.cas_number)
+                props.bcf = epa_props.get("bcf")
+                props.half_life_soil = epa_props.get("half_life_soil")
+                props.lc50_fish = epa_props.get("lc50_fish")
+                props.carcinogenicity_flag = epa_props.get("carcinogenicity_flag")
+                props.has_epa_data = epa_props.get("has_epa_data", False)
+            except Exception:
+                # EPA data is best-effort; don't fail enrichment if EPA is down
+                props.has_epa_data = False
 
         if smiles:
             substance.smiles = smiles

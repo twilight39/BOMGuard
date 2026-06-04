@@ -27,16 +27,31 @@ def mock_pubchem() -> MagicMock:
     return client
 
 
+@pytest.fixture
+def mock_epa() -> MagicMock:
+    client = MagicMock()
+    client.get_properties = AsyncMock(
+        return_value={
+            "has_epa_data": True,
+            "bcf": 3.12,
+            "half_life_soil": 15.0,
+            "lc50_fish": 2.5,
+            "carcinogenicity_flag": False,
+        }
+    )
+    return client
+
+
 @pytest.mark.asyncio
 async def test_enrich_substance_creates_properties(
-    db: Session, seed_regulation: Any, mock_pubchem: MagicMock
+    db: Session, seed_regulation: Any, mock_pubchem: MagicMock, mock_epa: MagicMock
 ) -> None:
     _ = seed_regulation
     sub = Substance(name="Ethanol", cas_number="64-17-5")
     db.add(sub)
     db.commit()
 
-    pipeline = EnrichmentPipeline(db, pubchem=mock_pubchem)
+    pipeline = EnrichmentPipeline(db, pubchem=mock_pubchem, epa=mock_epa)
     props = await pipeline.enrich_substance(sub)
 
     assert props.substance_id == sub.id
@@ -45,23 +60,26 @@ async def test_enrich_substance_creates_properties(
     assert props.molecular_weight == pytest.approx(46.07, abs=0.01)
     assert props.hbd == 1
     assert props.hba == 1
+    assert props.has_epa_data is True
+    assert props.bcf == pytest.approx(3.12)
 
     # Verify stored in DB
     fetched = db.query(SubstanceProperties).filter_by(substance_id=sub.id).first()
     assert fetched is not None
     assert fetched.has_smiles is True
+    assert fetched.has_epa_data is True
 
 
 @pytest.mark.asyncio
 async def test_enrich_substance_idempotent(
-    db: Session, seed_regulation: Any, mock_pubchem: MagicMock
+    db: Session, seed_regulation: Any, mock_pubchem: MagicMock, mock_epa: MagicMock
 ) -> None:
     _ = seed_regulation
     sub = Substance(name="Ethanol", cas_number="64-17-5")
     db.add(sub)
     db.commit()
 
-    pipeline = EnrichmentPipeline(db, pubchem=mock_pubchem)
+    pipeline = EnrichmentPipeline(db, pubchem=mock_pubchem, epa=mock_epa)
     _ = await pipeline.enrich_substance(sub)
     _ = await pipeline.enrich_substance(sub)
 
@@ -72,7 +90,7 @@ async def test_enrich_substance_idempotent(
 
 @pytest.mark.asyncio
 async def test_enrich_all_missing_counts(
-    db: Session, mock_pubchem: MagicMock
+    db: Session, mock_pubchem: MagicMock, mock_epa: MagicMock
 ) -> None:
     # Seed two substances
     s1 = Substance(name="Ethanol", cas_number="64-17-5")
@@ -80,7 +98,7 @@ async def test_enrich_all_missing_counts(
     db.add_all([s1, s2])
     db.commit()
 
-    pipeline = EnrichmentPipeline(db, pubchem=mock_pubchem)
+    pipeline = EnrichmentPipeline(db, pubchem=mock_pubchem, epa=mock_epa)
     result = await pipeline.enrich_all_missing(batch_size=10)
 
     assert result["processed"] == 2
@@ -93,14 +111,14 @@ async def test_enrich_all_missing_counts(
 
 @pytest.mark.asyncio
 async def test_enrich_all_missing_skips_already_enriched(
-    db: Session, mock_pubchem: MagicMock
+    db: Session, mock_pubchem: MagicMock, mock_epa: MagicMock
 ) -> None:
     s1 = Substance(name="Ethanol", cas_number="64-17-5")
     db.add(s1)
     db.commit()
 
     # First enrichment
-    pipeline = EnrichmentPipeline(db, pubchem=mock_pubchem)
+    pipeline = EnrichmentPipeline(db, pubchem=mock_pubchem, epa=mock_epa)
     _ = await pipeline.enrich_all_missing(batch_size=10)
 
     # Second enrichment — should find nothing to process
@@ -122,8 +140,12 @@ async def test_enrich_substance_pubchem_404(
     mock_client.get_smiles = AsyncMock(return_value=None)
     mock_client.get_properties = AsyncMock(return_value={})
 
-    pipeline = EnrichmentPipeline(db, pubchem=mock_client)
+    mock_epa_client = MagicMock()
+    mock_epa_client.get_properties = AsyncMock(return_value={"has_epa_data": False})
+
+    pipeline = EnrichmentPipeline(db, pubchem=mock_client, epa=mock_epa_client)
     props = await pipeline.enrich_substance(sub)
 
     assert props.has_smiles is False
     assert sub.smiles is None
+    assert props.has_epa_data is False
