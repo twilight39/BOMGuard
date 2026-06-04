@@ -4,7 +4,7 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Install system dependencies (cached layer — rarely changes)
-RUN apt-get update && apt-get install -y --no-install-staged \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     gcc \
     g++ \
