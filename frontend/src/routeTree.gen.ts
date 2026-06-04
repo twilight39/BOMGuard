@@ -11,7 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AskRouteImport } from './routes/ask'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RegulationsIndexRouteImport } from './routes/regulations.index'
+import { Route as BomsIndexRouteImport } from './routes/boms.index'
+import { Route as ScanNewRouteImport } from './routes/scan.new'
 import { Route as ScanBomIdRouteImport } from './routes/scan.$bomId'
+import { Route as BomsBomIdRouteImport } from './routes/boms.$bomId'
 import { Route as AdminMlRouteImport } from './routes/admin.ml'
 
 const AskRoute = AskRouteImport.update({
@@ -24,9 +28,29 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RegulationsIndexRoute = RegulationsIndexRouteImport.update({
+  id: '/regulations/',
+  path: '/regulations/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BomsIndexRoute = BomsIndexRouteImport.update({
+  id: '/boms/',
+  path: '/boms/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScanNewRoute = ScanNewRouteImport.update({
+  id: '/scan/new',
+  path: '/scan/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ScanBomIdRoute = ScanBomIdRouteImport.update({
   id: '/scan/$bomId',
   path: '/scan/$bomId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BomsBomIdRoute = BomsBomIdRouteImport.update({
+  id: '/boms/$bomId',
+  path: '/boms/$bomId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminMlRoute = AdminMlRouteImport.update({
@@ -39,34 +63,75 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ask': typeof AskRoute
   '/admin/ml': typeof AdminMlRoute
+  '/boms/$bomId': typeof BomsBomIdRoute
   '/scan/$bomId': typeof ScanBomIdRoute
+  '/scan/new': typeof ScanNewRoute
+  '/boms/': typeof BomsIndexRoute
+  '/regulations/': typeof RegulationsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ask': typeof AskRoute
   '/admin/ml': typeof AdminMlRoute
+  '/boms/$bomId': typeof BomsBomIdRoute
   '/scan/$bomId': typeof ScanBomIdRoute
+  '/scan/new': typeof ScanNewRoute
+  '/boms': typeof BomsIndexRoute
+  '/regulations': typeof RegulationsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/ask': typeof AskRoute
   '/admin/ml': typeof AdminMlRoute
+  '/boms/$bomId': typeof BomsBomIdRoute
   '/scan/$bomId': typeof ScanBomIdRoute
+  '/scan/new': typeof ScanNewRoute
+  '/boms/': typeof BomsIndexRoute
+  '/regulations/': typeof RegulationsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/ask' | '/admin/ml' | '/scan/$bomId'
+  fullPaths:
+    | '/'
+    | '/ask'
+    | '/admin/ml'
+    | '/boms/$bomId'
+    | '/scan/$bomId'
+    | '/scan/new'
+    | '/boms/'
+    | '/regulations/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ask' | '/admin/ml' | '/scan/$bomId'
-  id: '__root__' | '/' | '/ask' | '/admin/ml' | '/scan/$bomId'
+  to:
+    | '/'
+    | '/ask'
+    | '/admin/ml'
+    | '/boms/$bomId'
+    | '/scan/$bomId'
+    | '/scan/new'
+    | '/boms'
+    | '/regulations'
+  id:
+    | '__root__'
+    | '/'
+    | '/ask'
+    | '/admin/ml'
+    | '/boms/$bomId'
+    | '/scan/$bomId'
+    | '/scan/new'
+    | '/boms/'
+    | '/regulations/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AskRoute: typeof AskRoute
   AdminMlRoute: typeof AdminMlRoute
+  BomsBomIdRoute: typeof BomsBomIdRoute
   ScanBomIdRoute: typeof ScanBomIdRoute
+  ScanNewRoute: typeof ScanNewRoute
+  BomsIndexRoute: typeof BomsIndexRoute
+  RegulationsIndexRoute: typeof RegulationsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -85,11 +150,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/regulations/': {
+      id: '/regulations/'
+      path: '/regulations'
+      fullPath: '/regulations/'
+      preLoaderRoute: typeof RegulationsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/boms/': {
+      id: '/boms/'
+      path: '/boms'
+      fullPath: '/boms/'
+      preLoaderRoute: typeof BomsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scan/new': {
+      id: '/scan/new'
+      path: '/scan/new'
+      fullPath: '/scan/new'
+      preLoaderRoute: typeof ScanNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/scan/$bomId': {
       id: '/scan/$bomId'
       path: '/scan/$bomId'
       fullPath: '/scan/$bomId'
       preLoaderRoute: typeof ScanBomIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/boms/$bomId': {
+      id: '/boms/$bomId'
+      path: '/boms/$bomId'
+      fullPath: '/boms/$bomId'
+      preLoaderRoute: typeof BomsBomIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/ml': {
@@ -106,7 +199,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AskRoute: AskRoute,
   AdminMlRoute: AdminMlRoute,
+  BomsBomIdRoute: BomsBomIdRoute,
   ScanBomIdRoute: ScanBomIdRoute,
+  ScanNewRoute: ScanNewRoute,
+  BomsIndexRoute: BomsIndexRoute,
+  RegulationsIndexRoute: RegulationsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

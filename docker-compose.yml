@@ -8,6 +8,9 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - WORKOS_API_KEY=${WORKOS_API_KEY:-}
+      - WORKOS_CLIENT_ID=${WORKOS_CLIENT_ID:-}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-change-in-prod}
     depends_on:
       db:
         condition: service_healthy
@@ -17,6 +20,7 @@ services:
         condition: service_started
     volumes:
       - ./data/reports:/app/reports
+      - ./samples:/app/samples
     restart: unless-stopped
 
   frontend:

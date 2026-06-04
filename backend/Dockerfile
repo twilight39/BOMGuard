@@ -38,6 +38,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH=/app
 
+RUN mkdir -p /app/static/avatars
+
 EXPOSE 8000
 
 CMD ["uvicorn", "bomguard.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
