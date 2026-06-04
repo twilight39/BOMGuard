@@ -21,11 +21,4 @@ celery_app.conf.update(
     enable_utc=True,
     task_track_started=True,
     task_time_limit=3600,
-    beat_schedule={
-        "enrich-missing-substances-nightly": {
-            "task": "bomguard.enrichment.tasks.enrich_all_missing",
-            "schedule": 86400.0,  # daily in seconds (celery beat simple interval)
-            "kwargs": {"batch_size": 100},
-        },
-    },
 )
