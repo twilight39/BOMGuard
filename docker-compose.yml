@@ -11,6 +11,7 @@ services:
       - WORKOS_API_KEY=${WORKOS_API_KEY:-}
       - WORKOS_CLIENT_ID=${WORKOS_CLIENT_ID:-}
       - SECRET_KEY=${SECRET_KEY:-dev-secret-change-in-prod}
+      - COMPTOX_API_KEY=${COMPTOX_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy
