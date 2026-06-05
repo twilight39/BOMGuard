@@ -26,3 +26,9 @@ class Settings(BaseSettings):
     # Session cookie signing (required for auth)
     secret_key: str = "dev-secret-change-in-prod"
     frontend_url: str = "http://localhost:3000"
+
+    # Admin API key for protected endpoints (enrich-all, retrain, etc.)
+    admin_api_key: str | None = None
+
+    # CompTox API key for EPA data enrichment
+    comptox_api_key: str | None = None

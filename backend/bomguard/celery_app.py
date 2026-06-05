@@ -10,7 +10,7 @@ celery_app = Celery(
     "bomguard",
     broker=settings.redis_url,
     backend=settings.redis_url,
-    include=["bomguard.ingestion.tasks"],
+    include=["bomguard.ingestion.tasks", "bomguard.enrichment.tasks"],
 )
 
 celery_app.conf.update(

@@ -11,6 +11,7 @@ services:
       - WORKOS_API_KEY=${WORKOS_API_KEY:-}
       - WORKOS_CLIENT_ID=${WORKOS_CLIENT_ID:-}
       - SECRET_KEY=${SECRET_KEY:-dev-secret-change-in-prod}
+      - COMPTOX_API_KEY=${COMPTOX_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy
@@ -20,6 +21,7 @@ services:
         condition: service_started
     volumes:
       - ./data/reports:/app/reports
+      - ./data/models:/app/data/models
       - ./samples:/app/samples
     restart: unless-stopped
 
@@ -68,6 +70,9 @@ services:
       - DATABASE_URL=postgresql://bomguard:${DB_PASSWORD:-bomguard}@db:5432/bomguard
       - REDIS_URL=redis://redis:6379/0
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - COMPTOX_API_KEY=${COMPTOX_API_KEY:-}
+    volumes:
+      - ./data/models:/app/data/models
     depends_on:
       db:
         condition: service_healthy
@@ -81,6 +86,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://bomguard:${DB_PASSWORD:-bomguard}@db:5432/bomguard
       - REDIS_URL=redis://redis:6379/0
+      - COMPTOX_API_KEY=${COMPTOX_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy

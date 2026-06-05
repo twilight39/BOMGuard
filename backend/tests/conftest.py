@@ -1,6 +1,7 @@
 """Pytest fixtures and configuration."""
 
 from collections.abc import Generator
+from typing import Any
 
 import pytest
 from sqlalchemy import create_engine, text
@@ -41,6 +42,17 @@ def engine() -> Generator[Engine, None, None]:
     Base.metadata.create_all(test_engine)
     yield test_engine
     test_engine.dispose()
+
+
+@pytest.fixture
+def seed_regulation(db: Session) -> Any:
+    """Seed a test regulation."""
+    from bomguard.models.database import Regulation
+
+    reg = Regulation(id="test_reg", name="Test Regulation")
+    db.add(reg)
+    db.commit()
+    return reg
 
 
 @pytest.fixture

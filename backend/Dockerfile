@@ -1,8 +1,9 @@
+# syntax=docker/dockerfile:1
 FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install system dependencies for RDKit and psycopg2
+# Install system dependencies (cached layer — rarely changes)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     gcc \
@@ -11,15 +12,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+# Pin uv version for reproducible builds
+COPY --from=ghcr.io/astral-sh/uv:0.5.0 /uv /bin/uv
 
-# Copy dependency files
+# Copy dependency metadata
 COPY pyproject.toml ./
 COPY README.md ./
 
-# Install dependencies
-RUN uv sync --no-install-project
+# Install dependencies with BuildKit cache mount for uv cache.
+# This layer is cached until pyproject.toml changes.
+# Heavy packages (rdkit, scikit-learn, xgboost, numba) are built once and cached.
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --no-install-project
 
 # Copy application code
 COPY bomguard/ ./bomguard/
@@ -27,8 +31,9 @@ COPY tests/ ./tests/
 COPY alembic.ini ./
 COPY migrations/ ./migrations/
 
-# Install project
-RUN uv sync
+# Install project (fast — only re-links the local package)
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync
 
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH=/app
