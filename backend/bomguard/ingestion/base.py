@@ -1,7 +1,7 @@
 """Base classes for regulation scraper plugins."""
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import ClassVar
 
 
@@ -28,11 +28,7 @@ class IngestionResult:
     statuses_updated: int = 0
     changes_detected: int = 0
     total_fetched: int = 0
-    new_substance_ids: list[int] = None  # type: ignore[assignment]
-
-    def __post_init__(self) -> None:
-        if self.new_substance_ids is None:
-            self.new_substance_ids = []
+    new_substance_ids: list[int] = field(default_factory=list)
 
 
 class RegulationScraper(ABC):

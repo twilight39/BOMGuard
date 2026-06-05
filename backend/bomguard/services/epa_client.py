@@ -64,7 +64,7 @@ class EPACompToxClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
-        retry=retry_if_exception_type((httpx.HTTPStatusError, httpx.ConnectError)),
+        retry=retry_if_exception_type((httpx.HTTPStatusError, httpx.ConnectError, httpx.ReadTimeout)),
         reraise=True,
     )
     async def search_by_cas(self, cas_number: str) -> dict[str, Any] | None:
@@ -93,7 +93,7 @@ class EPACompToxClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
-        retry=retry_if_exception_type((httpx.HTTPStatusError, httpx.ConnectError)),
+        retry=retry_if_exception_type((httpx.HTTPStatusError, httpx.ConnectError, httpx.ReadTimeout)),
         reraise=True,
     )
     async def get_chemical_detail(self, dtxsid: str) -> dict[str, Any]:
@@ -118,7 +118,7 @@ class EPACompToxClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
-        retry=retry_if_exception_type((httpx.HTTPStatusError, httpx.ConnectError)),
+        retry=retry_if_exception_type((httpx.HTTPStatusError, httpx.ConnectError, httpx.ReadTimeout)),
         reraise=True,
     )
     async def get_fate_data(self, dtxsid: str) -> list[dict[str, Any]]:
@@ -145,7 +145,7 @@ class EPACompToxClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
-        retry=retry_if_exception_type((httpx.HTTPStatusError, httpx.ConnectError)),
+        retry=retry_if_exception_type((httpx.HTTPStatusError, httpx.ConnectError, httpx.ReadTimeout)),
         reraise=True,
     )
     async def get_cancer_summary(self, dtxsid: str) -> list[dict[str, Any]]:

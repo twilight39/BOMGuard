@@ -140,7 +140,8 @@ class EnrichmentPipeline:
                 failed += 1
 
         # Compute Morgan fingerprints + PCA for enriched batch
-        self._compute_fingerprints_for_batch(missing)
+        if enriched > 0:
+            self._compute_fingerprints_for_batch(missing)
 
         total = self.db.query(func.count(Substance.id)).scalar() or 0
         with_props = (

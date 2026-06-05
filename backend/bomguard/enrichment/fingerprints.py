@@ -5,6 +5,7 @@ them to 50 dimensions using scikit-learn PCA. The fitted PCA model is
 persisted to disk so the same transform is applied consistently.
 """
 
+import os
 import pickle
 from pathlib import Path
 from typing import Any
@@ -20,7 +21,8 @@ try:
 except Exception:
     _RDKIT_AVAILABLE = False
 
-PCA_MODEL_PATH: Path = Path(__file__).parent.parent / "models" / "fingerprint_pca_50.pkl"
+_default_pca_path = Path(__file__).parent.parent.parent / "data" / "models" / "fingerprint_pca_50.pkl"
+PCA_MODEL_PATH: Path = Path(os.environ.get("PCA_MODEL_PATH", str(_default_pca_path)))
 
 
 def _ensure_model_dir() -> None:
