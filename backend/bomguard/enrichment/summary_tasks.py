@@ -48,8 +48,8 @@ def generate_regulatory_summaries(
         db.close()
 
 
-@celery_app.task
-def generate_all_summaries(batch_size: int = 50) -> dict[str, Any]:
+@celery_app.task(bind=True, max_retries=3)
+def generate_all_summaries(self: Any, batch_size: int = 50) -> dict[str, Any]:
     """Backfill summaries for all substances that lack them."""
     generator = _get_generator()
     db = SessionLocal()
@@ -63,5 +63,7 @@ def generate_all_summaries(batch_size: int = 50) -> dict[str, Any]:
                 break
             total_generated += len(batch)
         return {"total_generated": total_generated}
+    except Exception as exc:
+        raise self.retry(exc=exc, countdown=60) from exc
     finally:
         db.close()

@@ -74,6 +74,7 @@ class OpenRouterClient:
         text: str,
         model: str = "google/gemini-embedding-001",
         dimensions: int = 768,
+        max_retries: int = 3,
     ) -> list[float]:
         """Generate embeddings via OpenRouter's OpenAI-compatible endpoint."""
         payload: dict[str, Any] = {
@@ -83,22 +84,31 @@ class OpenRouterClient:
         }
 
         async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(
-                f"{self.BASE_URL}/embeddings",
-                headers=self.headers,
-                json=payload,
-            )
-            if response.status_code >= 400:
-                logger.error(
-                    "OpenRouter embed error: %s %s — %s",
-                    response.status_code,
-                    response.reason_phrase,
-                    response.text,
+            for attempt in range(max_retries):
+                response = await client.post(
+                    f"{self.BASE_URL}/embeddings",
+                    headers=self.headers,
+                    json=payload,
                 )
-            response.raise_for_status()
-            data: dict[str, Any] = response.json()
-            embedding: list[float] = data["data"][0]["embedding"]
-            return embedding
+                if response.status_code == 429:
+                    import asyncio
+
+                    wait = 2**attempt
+                    await asyncio.sleep(wait)
+                    continue
+                if response.status_code >= 400:
+                    logger.error(
+                        "OpenRouter embed error: %s %s — %s",
+                        response.status_code,
+                        response.reason_phrase,
+                        response.text,
+                    )
+                response.raise_for_status()
+                data: dict[str, Any] = response.json()
+                embedding: list[float] = data["data"][0]["embedding"]
+                return embedding
+
+        raise RuntimeError("OpenRouter embed failed after retries")
 
     async def chat_stream(
         self,
@@ -124,16 +134,17 @@ class OpenRouterClient:
             ) as response,
         ):
             try:
-                if isinstance(response.status_code, int) and response.status_code >= 400:
-                    body = await response.aread()
-                    logger.error(
-                        "OpenRouter stream error: %s %s — %s",
-                        response.status_code,
-                        response.reason_phrase,
-                        body.decode() if body else "",
-                    )
-            except TypeError:
-                pass
+                status_code = int(response.status_code)
+            except (TypeError, ValueError):
+                status_code = 0
+            if status_code >= 400:
+                body = await response.aread()
+                logger.error(
+                    "OpenRouter stream error: %s %s — %s",
+                    status_code,
+                    response.reason_phrase,
+                    body.decode() if body else "",
+                )
             response.raise_for_status()
             async for line in response.aiter_lines():
                 line = line.strip()

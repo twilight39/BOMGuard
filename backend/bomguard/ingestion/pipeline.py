@@ -79,6 +79,7 @@ def run_scraper(scraper: RegulationScraper, db: Session) -> IngestionResult:
 
         if is_new:
             result.substances_created += 1
+            result.new_substance_ids.append(substance.id)
         else:
             result.substances_updated += 1
 

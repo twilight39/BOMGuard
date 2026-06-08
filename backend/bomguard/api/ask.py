@@ -1,5 +1,6 @@
 """LLM Q&A endpoints (REST + WebSocket)."""
 
+import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
@@ -152,5 +153,8 @@ async def ask_websocket(websocket: WebSocket) -> None:
     except WebSocketDisconnect:
         pass
     except Exception as exc:
-        await websocket.send_json({"type": "error", "message": str(exc)})
+        logger.exception("WebSocket error")
+        await websocket.send_json(
+            {"type": "error", "message": "An error occurred. Please try again."}
+        )
         await websocket.close()
