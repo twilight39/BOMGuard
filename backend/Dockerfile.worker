@@ -1,0 +1,30 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install system dependencies for RDKit and psycopg2
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq-dev \
+    gcc \
+    g++ \
+    libfontconfig1 \
+    libxrender1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
+ENV UV_LINK_MODE=copy
+ENV UV_COMPILE_BYTECODE=1
+
+# Copy dependency files and install dependencies
+# Cache mount persists uv's package cache across builds
+COPY pyproject.toml README.md ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --no-install-project
+
+# Copy application code (no tests/alembic/migrations needed for worker)
+COPY bomguard/ ./bomguard/
+
+ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONPATH=/app

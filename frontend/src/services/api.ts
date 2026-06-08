@@ -1,6 +1,8 @@
 import type { Bom, BomDetail, ScanResult } from '@/types'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+// In production (nginx/docker) we use relative URLs so /api is proxied
+// to the backend. In dev (Vite) the vite.config.ts proxy handles it.
+const API_BASE = import.meta.env.VITE_API_URL || ''
 
 function camelize<T>(obj: unknown): T {
   if (obj === null || obj === undefined) return obj as T
@@ -133,4 +135,153 @@ export async function fetchScanResults(bomId: number): Promise<ScanResult[]> {
   const res = await apiFetch(`/api/scan/${bomId}/result`)
   const data = await handleResponse<unknown>(res)
   return camelize<ScanResult[]>(data)
+}
+
+export interface AskSource {
+  id: number
+  substance_id: number | null
+  regulation_id: string | null
+  summary_text: string
+}
+
+export interface AskResponse {
+  answer: string
+  sources: AskSource[]
+}
+
+export async function askQuestion(question: string): Promise<AskResponse> {
+  const res = await fetch(`${API_BASE}/api/ask/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question }),
+  })
+  if (!res.ok) {
+    throw new Error(`Ask failed: ${res.status}`)
+  }
+  return res.json()
+}
+
+export interface Regulation {
+  id: string
+  name: string
+  authority: string | null
+  scope: string | null
+  mlEnabled: boolean
+  mlModelVersion: string | null
+  positiveLabelCount: number
+  negativeLabelCount: number
+}
+
+export async function fetchRegulations(): Promise<Regulation[]> {
+  const res = await apiFetch('/api/regulations/')
+  if (!res.ok) {
+    throw new Error(`Failed to fetch regulations: ${res.status}`)
+  }
+  return camelize(await res.json())
+}
+
+export interface EnrichmentStatus {
+  substanceCount: number
+  summaryCount: number
+  missing: number
+  complete: boolean
+}
+
+export async function getEnrichmentStatus(): Promise<EnrichmentStatus> {
+  const res = await apiFetch('/api/admin/ml/enrich/status')
+  if (!res.ok) {
+    throw new Error(`Failed to fetch enrichment status: ${res.status}`)
+  }
+  return camelize(await res.json())
+}
+
+export async function triggerEnrichment(batchSize: number = 50): Promise<{ status: string; taskId: string }> {
+  const res = await apiFetch(`/api/admin/ml/enrich?batch_size=${batchSize}`, {
+    method: 'POST',
+  })
+  if (!res.ok) {
+    throw new Error(`Failed to trigger enrichment: ${res.status}`)
+  }
+  return camelize(await res.json())
+}
+
+export interface RecentScan {
+  bomId: number
+  bomName: string
+  complianceStatus: string
+  hitsFound: number
+  scannedAt: string | null
+}
+
+export async function fetchRecentScans(limit: number = 10): Promise<RecentScan[]> {
+  const res = await apiFetch(`/api/scan/recent?limit=${limit}`)
+  if (!res.ok) {
+    throw new Error(`Failed to fetch recent scans: ${res.status}`)
+  }
+  return camelize(await res.json())
+}
+
+export interface ChatThread {
+  id: number
+  title: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ChatMessage {
+  id: number
+  role: 'user' | 'assistant'
+  content: string
+  sources?: { id: number; substance_id: number | null; regulation_id: string | null; summary_text: string }[]
+  createdAt: string
+}
+
+export async function fetchChatThreads(): Promise<ChatThread[]> {
+  const res = await apiFetch('/api/chat/threads')
+  if (!res.ok) {
+    throw new Error(`Failed to fetch threads: ${res.status}`)
+  }
+  return camelize(await res.json())
+}
+
+export async function createChatThread(title?: string): Promise<ChatThread> {
+  const res = await apiFetch('/api/chat/threads', {
+    method: 'POST',
+    body: JSON.stringify({ title }),
+  })
+  if (!res.ok) {
+    throw new Error(`Failed to create thread: ${res.status}`)
+  }
+  return camelize(await res.json())
+}
+
+export async function fetchChatMessages(threadId: number): Promise<ChatMessage[]> {
+  const res = await apiFetch(`/api/chat/threads/${threadId}/messages`)
+  if (!res.ok) {
+    throw new Error(`Failed to fetch messages: ${res.status}`)
+  }
+  return camelize(await res.json())
+}
+
+export async function syncAnonymousThread(
+  threadId: number,
+  messages: { role: 'user' | 'assistant'; content: string; sources?: unknown }[]
+): Promise<{ synced: number }> {
+  const res = await apiFetch(`/api/chat/threads/${threadId}/sync`, {
+    method: 'POST',
+    body: JSON.stringify({ messages }),
+  })
+  if (!res.ok) {
+    throw new Error(`Failed to sync thread: ${res.status}`)
+  }
+  return camelize(await res.json())
+}
+
+export async function deleteChatThread(threadId: number): Promise<void> {
+  const res = await apiFetch(`/api/chat/threads/${threadId}`, {
+    method: 'DELETE',
+  })
+  if (!res.ok) {
+    throw new Error(`Failed to delete thread: ${res.status}`)
+  }
 }

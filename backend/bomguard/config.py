@@ -1,5 +1,6 @@
 """Pydantic settings for BOMGuard."""
 
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,14 +15,28 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql://bomguard:bomguard@localhost:5432/bomguard"
     redis_url: str = "redis://localhost:6379/0"
-    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:5173"]
+    cors_origins: list[str] = [
+        "http://localhost",
+        "http://localhost:3000",
+        "http://localhost:5173",
+    ]
 
     gemini_api_key: str | None = None
+    openrouter_api_key: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("openrouter_api_key", "openrouter_key"),
+    )
     mlflow_tracking_uri: str = "http://localhost:5000"
 
     # WorkOS auth
     workos_api_key: str | None = None
     workos_client_id: str | None = None
+
+    # Admin API key for protected endpoints (enrich-all, retrain, etc.)
+    admin_api_key: str | None = None
+
+    # CompTox API key for EPA data enrichment
+    comptox_api_key: str | None = None
 
     # Session cookie signing (required for auth)
     secret_key: str = "dev-secret-change-in-prod"

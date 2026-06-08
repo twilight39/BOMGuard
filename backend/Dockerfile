@@ -15,6 +15,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Pin uv version for reproducible builds
 COPY --from=ghcr.io/astral-sh/uv:0.5.0 /uv /bin/uv
 
+ENV UV_LINK_MODE=copy
+ENV UV_COMPILE_BYTECODE=1
+
 # Copy dependency metadata
 COPY pyproject.toml ./
 COPY README.md ./
