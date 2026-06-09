@@ -108,5 +108,19 @@ class UserPreferenceSchema(BaseModel):
     email_notifications: bool = True
 
 
+class ShapFeatureContribution(BaseModel):
+    feature: str
+    value: float
+    contribution: float
+
+
+class ShapExplanationResponse(BaseModel):
+    cas: str
+    regulation: str
+    predicted_risk: float
+    base_value: float
+    top_features: list[ShapFeatureContribution]
+
+
 class HealthCheckResponse(BaseModel):
     status: str
