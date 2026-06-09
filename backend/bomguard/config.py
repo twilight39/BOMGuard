@@ -27,6 +27,7 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("openrouter_api_key", "openrouter_key"),
     )
     mlflow_tracking_uri: str = "http://localhost:5000"
+    model_artifact_path: str = "bomguard/data/models"
 
     # WorkOS auth
     workos_api_key: str | None = None

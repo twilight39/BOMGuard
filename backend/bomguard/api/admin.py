@@ -40,8 +40,15 @@ async def retrain_model(
     regulation_id: str, db: Session = Depends(get_db)
 ) -> dict[str, Any]:
     """Manual retrigger of model training."""
-    _ = db
-    return {"regulation_id": regulation_id, "status": "queued"}
+    from bomguard.ml.models.train import train_and_persist
+
+    result = train_and_persist(db, regulation_id)
+    return {
+        "regulation_id": regulation_id,
+        "status": "completed",
+        "metrics": result["metrics"],
+        "metadata": result["metadata"],
+    }
 
 
 @router.get("/stats")
