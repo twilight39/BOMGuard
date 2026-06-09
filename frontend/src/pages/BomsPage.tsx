@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { Button } from '@/components/ui/button'
-import { fetchBoms, loadSample, fetchSampleList, uploadBom } from '@/services/api'
+import { fetchBoms, loadSample, fetchSampleList } from '@/services/api'
 import type { Bom } from '@/types'
 import { useAgGridTheme } from '@/hooks/useAgGridTheme'
+import { EnhancedBomUpload } from '@/components/upload/EnhancedBomUpload'
 import { AgGridReact } from 'ag-grid-react'
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
 import type { ColDef } from 'ag-grid-community'
@@ -31,8 +31,6 @@ export function BomsPage() {
     }
   })
   const [loadingSample, setLoadingSample] = useState<string | null>(null)
-  const [uploading, setUploading] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
 
   const loadBoms = async () => {
@@ -68,21 +66,6 @@ export function BomsPage() {
       localStorage.setItem(SAMPLES_DISMISSED_KEY, 'true')
     } catch {
       // ignore
-    }
-  }
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploading(true)
-    try {
-      const result = await uploadBom(file)
-      navigate({ to: `/boms/${result.id}` })
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Upload failed')
-    } finally {
-      setUploading(false)
-      if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
 
@@ -126,26 +109,10 @@ export function BomsPage() {
     <div className="flex flex-col h-full p-6 gap-4">
       <div className="flex items-center justify-between shrink-0">
         <h1 className="text-2xl font-heading font-bold">BOMs</h1>
-        <Button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
-        >
-          {uploading ? (
-            <span className="inline-flex items-center gap-2">
-              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-              Uploading…
-            </span>
-          ) : (
-            'Upload BOM'
-          )}
-        </Button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".csv,.xlsx,.xls"
-          onChange={handleFileChange}
-          className="hidden"
-        />
+      </div>
+
+      <div className="shrink-0">
+        <EnhancedBomUpload />
       </div>
 
       {showSampleSection && (

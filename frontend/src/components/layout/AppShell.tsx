@@ -12,6 +12,7 @@ const navItems = [
   { to: '/boms', label: 'BOMs', icon: '▤' },
   { to: '/scan/new', label: 'Scan', icon: '◎' },
   { to: '/regulations', label: 'Regulations', icon: '◉' },
+  { to: '/regulations/feed', label: 'Regulatory Feed', icon: '◐' },
   { to: '/ask', label: 'AI Assistant', icon: '◆' },
   { to: '/admin/ml', label: 'Admin', icon: '◊' },
 ]

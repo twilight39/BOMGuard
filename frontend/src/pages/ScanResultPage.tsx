@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button'
 import { fetchBom, triggerScan, fetchScanResults } from '@/services/api'
 import type { BomDetail, ScanResult } from '@/types'
 import { useAgGridTheme } from '@/hooks/useAgGridTheme'
+import { RiskBadge, RegulationBadge } from '@/components/scan-result/RiskBadge'
+import { ScanResultDetail } from '@/components/scan-result/ScanResultDetail'
 import { AgGridReact } from 'ag-grid-react'
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
 import type { ColDef, GridApi } from 'ag-grid-community'
@@ -43,6 +45,8 @@ export function ScanResultPage() {
   const [error, setError] = useState<string | null>(null)
   const [showColumnMenu, setShowColumnMenu] = useState(false)
   const [visibleCols, setVisibleCols] = useState<Set<ColumnKey>>(new Set(DEFAULT_VISIBLE))
+  const [detailCas, setDetailCas] = useState<string | null>(null)
+  const [detailReg, setDetailReg] = useState<string | null>(null)
   const gridApiRef = useRef<GridApi<ScanResult> | null>(null)
 
   const id = Number(bomId)
@@ -103,24 +107,13 @@ export function ScanResultPage() {
         headerName: 'Regulation',
         field: 'regulationId',
         flex: 2,
-        valueFormatter: (p) =>
-          p.data?.hitType === 'unknown_cas' ? '—' : (p.value || '—'),
+        cellRenderer: (p: { value?: string | null }) => <RegulationBadge regulationId={p.value} />,
       },
       {
         headerName: 'Severity',
         field: 'severity',
         width: 120,
-        valueFormatter: (p) => p.value,
-        cellClass: (p) =>
-          p.value === 'critical'
-            ? 'text-destructive font-semibold'
-            : p.value === 'high'
-              ? 'text-orange-600 font-semibold'
-              : p.value === 'medium'
-                ? 'text-yellow-600 font-semibold'
-                : p.value === 'unknown'
-                  ? 'text-yellow-600 dark:text-yellow-400 italic'
-                  : '',
+        cellRenderer: (p: { value?: string | null }) => <RiskBadge severity={p.value} />,
       },
       {
         headerName: 'Risk Score',
@@ -261,9 +254,29 @@ export function ScanResultPage() {
               onGridReady={(params) => {
                 gridApiRef.current = params.api
               }}
+              onRowClicked={(params) => {
+                if (params.data?.casNumber) {
+                  setDetailCas(params.data.casNumber)
+                  setDetailReg(params.data.regulationId || null)
+                }
+              }}
             />
           </div>
         </div>
+      )}
+
+      {detailCas && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/20"
+            onClick={() => setDetailCas(null)}
+          />
+          <ScanResultDetail
+            casNumber={detailCas}
+            regulationId={detailReg || undefined}
+            onClose={() => setDetailCas(null)}
+          />
+        </>
       )}
     </div>
   )
