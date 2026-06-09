@@ -2,13 +2,14 @@
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 
 from bomguard.db import get_db
 from bomguard.ingestion.pipeline import run_scraper
 from bomguard.ingestion.registry import get_scraper
 from bomguard.models.schemas import RegulationSchema
+from bomguard.websocket import ws_manager
 
 router = APIRouter(prefix="/api/regulations", tags=["Regulations"])
 
@@ -68,3 +69,17 @@ async def refresh_regulation(regulation_id: str, db: Session = Depends(get_db)) 
         "statuses_created": result.statuses_created,
         "changes_detected": result.changes_detected,
     }
+
+
+@router.websocket("/ws")
+async def regulations_websocket(websocket: WebSocket) -> None:
+    """Real-time regulatory change alerts."""
+    await ws_manager.connect(websocket)
+    try:
+        while True:
+            # Keep connection alive; clients can send ping/keepalive
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_text("pong")
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket)

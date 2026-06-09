@@ -4,6 +4,8 @@ import { Outlet } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/AuthContext'
 import { UserSettingsModal } from '@/components/user/UserSettingsModal'
+import { useRegulatoryAlerts } from '@/hooks/useRegulatoryAlerts'
+import { RegulatoryAlertToast } from '@/components/regulatory-feed/RegulatoryAlertToast'
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: '◈' },
@@ -144,6 +146,7 @@ function UserSection() {
 export function AppShell() {
   const router = useRouterState()
   const currentPath = router.location.pathname
+  const { alerts, dismissAlert, connected } = useRegulatoryAlerts()
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans flex">
@@ -181,10 +184,27 @@ export function AppShell() {
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-14 border-b flex items-center justify-between px-6 bg-card">
           <Breadcrumbs />
+          {connected && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Live
+            </span>
+          )}
         </header>
         <main className="flex-1 overflow-auto">
           <Outlet />
         </main>
+      </div>
+
+      {/* Regulatory alert toasts */}
+      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 w-full max-w-sm pointer-events-none">
+        {alerts.map((alert) => (
+          <RegulatoryAlertToast
+            key={alert.id}
+            alert={alert}
+            onDismiss={() => dismissAlert(alert.id)}
+          />
+        ))}
       </div>
     </div>
   )
