@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from bomguard.ingestion.base import IngestionResult, RawSubstance, RegulationScraper
 from bomguard.models.database import RegulatoryChange, Substance, SubstanceRegulationStatus
+from bomguard.websocket import ws_manager
 
 
 def _get_change_hash(raw_data: dict[str, Any]) -> str:
@@ -146,4 +147,14 @@ def run_scraper(scraper: RegulationScraper, db: Session) -> IngestionResult:
             result.statuses_created += 1
 
     db.commit()
+
+    if result.changes_detected > 0:
+        ws_manager.broadcast_sync({
+            "type": "regulatory_change",
+            "regulation_id": scraper.regulation_id,
+            "changes_detected": result.changes_detected,
+            "substances_created": result.substances_created,
+            "substances_updated": result.substances_updated,
+        })
+
     return result
