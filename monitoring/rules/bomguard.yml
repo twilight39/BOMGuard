@@ -1,0 +1,60 @@
+groups:
+  - name: bomguard
+    rules:
+      - alert: BOMGuardAPIDown
+        expr: up{job="bomguard-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "BOMGuard API is down"
+          description: "The BOMGuard API at {{ $labels.instance }} has been down for more than 1 minute."
+
+      - alert: BOMGuardHighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{job="bomguard-api",status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{job="bomguard-api"}[5m]))
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "BOMGuard API error rate is high"
+          description: "5xx error rate is above 5% for more than 2 minutes."
+
+      - alert: BOMGuardHighLatency
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(http_request_duration_seconds_bucket{job="bomguard-api"}[5m])) by (le)
+          ) > 1.0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "BOMGuard API p95 latency is high"
+          description: "p95 latency is above 1 second for more than 2 minutes."
+
+      - alert: BOMGuardMLModelStale
+        expr: bomguard_ml_model_days_since_trained{job="bomguard-api"} > 14
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "BOMGuard ML model is stale"
+          description: "The ML model for regulation {{ $labels.regulation_id }} has not been retrained in over 14 days."
+
+      - alert: BOMGuardScraperFailed
+        expr: |
+          (
+            time()
+            - max by (regulation_id) (bomguard_last_scrape_timestamp_seconds{job="bomguard-api"})
+          ) > 86400
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "BOMGuard scraper has not run recently"
+          description: "No successful scrape for regulation {{ $labels.regulation_id }} in over 24 hours."

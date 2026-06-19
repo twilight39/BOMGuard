@@ -3,6 +3,7 @@
 import google.generativeai as genai
 from sqlalchemy.orm import Session
 
+from bomguard.metrics import embeddings_generated_total
 from bomguard.models.database import RegulatorySummary, Substance, SubstanceRegulationStatus
 from bomguard.services.openrouter_client import OpenRouterClient
 
@@ -94,8 +95,11 @@ class SummaryGenerator:
                 task_type="retrieval_document",
             )
             embedding: list[float] = result["embedding"]
+            embeddings_generated_total.inc()
             return embedding
-        return await self.openrouter.embed(text)
+        embedding = await self.openrouter.embed(text)
+        embeddings_generated_total.inc()
+        return embedding
 
     def save_summary(
         self,

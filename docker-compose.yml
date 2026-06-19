@@ -161,6 +161,7 @@ services:
       - "9090:9090"
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/rules:/etc/prometheus/rules
       - prometheusdata:/prometheus
     restart: unless-stopped
 
@@ -172,7 +173,8 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
     volumes:
       - grafanadata:/var/lib/grafana
-      - ./monitoring/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana-provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/dashboards:/etc/grafana/provisioning/dashboards/json
     restart: unless-stopped
 
   traefik:

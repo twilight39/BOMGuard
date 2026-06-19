@@ -7,7 +7,10 @@ from alembic import command
 from alembic.config import Config
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
 from fastapi.staticfiles import StaticFiles
+from prometheus_client import CONTENT_TYPE_LATEST, Gauge, generate_latest
+from prometheus_fastapi_instrumentator import Instrumentator
 from starlette.middleware.sessions import SessionMiddleware
 
 from bomguard.api.admin import router as admin_router
@@ -107,5 +110,136 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/api/health", response_model=HealthCheckResponse)
     async def health_check() -> HealthCheckResponse:
         return HealthCheckResponse(status="ok")
+
+    # Instrument default request metrics (rate, latency, error rate).
+    instrumentator = Instrumentator()
+    instrumentator.instrument(app).expose(
+        app, endpoint="/api/metrics/internal", include_in_schema=False
+    )
+
+    # Custom gauges for ML model performance and regulatory data.
+    _ml_roc_gauge = Gauge(
+        "bomguard_ml_model_roc_auc",
+        "Latest ROC-AUC per regulation",
+        ["regulation_id"],
+    )
+    _ml_ap_gauge = Gauge(
+        "bomguard_ml_model_average_precision",
+        "Latest average precision per regulation",
+        ["regulation_id"],
+    )
+    _ml_brier_gauge = Gauge(
+        "bomguard_ml_model_brier_score",
+        "Latest Brier score per regulation",
+        ["regulation_id"],
+    )
+    _ml_promoted_gauge = Gauge(
+        "bomguard_ml_model_promoted",
+        "Whether the latest model is promoted to production",
+        ["regulation_id"],
+    )
+    _ml_days_since_trained_gauge = Gauge(
+        "bomguard_ml_model_days_since_trained",
+        "Days since the last model training per regulation",
+        ["regulation_id"],
+    )
+    _regulation_substances_gauge = Gauge(
+        "bomguard_regulation_substances",
+        "Number of restricted substances per regulation",
+        ["regulation_id"],
+    )
+    _last_scrape_gauge = Gauge(
+        "bomguard_last_scrape_timestamp_seconds",
+        "Unix timestamp of the last detected regulatory change per regulation",
+        ["regulation_id"],
+    )
+
+    @app.get("/api/metrics")
+    async def metrics() -> PlainTextResponse:
+        """Expose Prometheus metrics including custom ML performance gauges."""
+        from datetime import UTC, datetime
+
+        from sqlalchemy import func
+
+        from bomguard.db import SessionLocal
+        from bomguard.models.database import (
+            MLModelPerformance,
+            Regulation,
+            SubstanceRegulationStatus,
+        )
+
+        db = SessionLocal()
+        try:
+            # Latest performance per regulation
+            for reg_id_row in db.query(MLModelPerformance.regulation_id).distinct().all():
+                reg_id = reg_id_row[0]
+                perf = (
+                    db.query(MLModelPerformance)
+                    .filter_by(regulation_id=reg_id)
+                    .order_by(MLModelPerformance.trained_at.desc().nullslast())
+                    .first()
+                )
+                if perf:
+                    if perf.roc_auc is not None:
+                        _ml_roc_gauge.labels(regulation_id=reg_id).set(perf.roc_auc)
+                    if perf.average_precision is not None:
+                        _ml_ap_gauge.labels(regulation_id=reg_id).set(perf.average_precision)
+                    if perf.brier_score is not None:
+                        _ml_brier_gauge.labels(regulation_id=reg_id).set(perf.brier_score)
+                    _ml_promoted_gauge.labels(regulation_id=reg_id).set(
+                        1 if perf.promoted_to_production else 0
+                    )
+
+            # Days since last training for ML-enabled regulations
+            ml_regs = db.query(Regulation).filter(Regulation.ml_enabled.is_(True)).all()
+            for reg in ml_regs:
+                perf = (
+                    db.query(MLModelPerformance)
+                    .filter_by(regulation_id=reg.id)
+                    .order_by(MLModelPerformance.trained_at.desc().nullslast())
+                    .first()
+                )
+                if perf and perf.trained_at:
+                    days = (datetime.now(UTC) - perf.trained_at).total_seconds() / 86400
+                    _ml_days_since_trained_gauge.labels(regulation_id=reg.id).set(days)
+                else:
+                    _ml_days_since_trained_gauge.labels(regulation_id=reg.id).set(-1)
+
+            # Substance counts per regulation
+            counts = (
+                db.query(
+                    SubstanceRegulationStatus.regulation_id,
+                    func.count(SubstanceRegulationStatus.substance_id).label("cnt"),
+                )
+                .filter(SubstanceRegulationStatus.status == "restricted")
+                .group_by(SubstanceRegulationStatus.regulation_id)
+                .all()
+            )
+            for reg_id, cnt in counts:
+                _regulation_substances_gauge.labels(regulation_id=reg_id).set(cnt)
+
+            # Last scrape timestamp per regulation
+            from bomguard.models.database import RegulatoryChange
+
+            for reg in db.query(Regulation).all():
+                latest_change = (
+                    db.query(RegulatoryChange)
+                    .filter_by(regulation_id=reg.id)
+                    .order_by(RegulatoryChange.detected_at.desc().nullslast())
+                    .first()
+                )
+                if latest_change and latest_change.detected_at:
+                    _last_scrape_gauge.labels(regulation_id=reg.id).set(
+                        latest_change.detected_at.timestamp()
+                    )
+                else:
+                    _last_scrape_gauge.labels(regulation_id=reg.id).set(0)
+        finally:
+            db.close()
+
+        return PlainTextResponse(
+            content=generate_latest().decode("utf-8"),
+            media_type=CONTENT_TYPE_LATEST,
+        )
 
     return app
