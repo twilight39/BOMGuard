@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
@@ -23,7 +23,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     const res = await fetch(`${API_BASE}/api/auth/me`, { credentials: 'include' })
     if (res.ok) {
       const data = await res.json()
@@ -31,15 +31,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       setUser(null)
     }
-  }
+  }, [])
 
   useEffect(() => {
-    refreshUser()
-      .catch(() => {
+    const init = async () => {
+      try {
+        await refreshUser()
+      } catch {
         // Silently ignore auth check failures
-      })
-      .finally(() => setIsLoading(false))
-  }, [])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    init()
+  }, [refreshUser])
 
   const login = () => {
     window.location.href = `${API_BASE}/api/auth/login`

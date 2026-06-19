@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -66,7 +67,7 @@ function ScanNewPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleScan = async (bomId: number) => {
+  const handleScan = useCallback(async (bomId: number) => {
     setScanningId(bomId);
     try {
       await triggerScan(bomId);
@@ -75,7 +76,7 @@ function ScanNewPage() {
       alert(err instanceof Error ? err.message : "Scan failed");
       setScanningId(null);
     }
-  };
+  }, [navigate]);
 
   const handleScanAll = async () => {
     const ids = selectedIds.size > 0
@@ -119,7 +120,7 @@ function ScanNewPage() {
         onScan={handleScan}
       />
     ),
-    [scanningId, scanningAll],
+    [scanningId, scanningAll, handleScan],
   );
 
   const columnDefs: ColDef<Bom>[] = useMemo(

@@ -28,9 +28,12 @@ export function UserSettingsModal({ open, onClose }: UserSettingsModalProps) {
 
   useEffect(() => {
     if (open && user) {
-      setName(user.name || '')
-      setShowDeleteConfirm(false)
-      setError('')
+      const timeoutId = setTimeout(() => {
+        setName(user.name || '')
+        setShowDeleteConfirm(false)
+        setError('')
+      }, 0)
+      return () => clearTimeout(timeoutId)
     }
   }, [open, user])
 

@@ -180,6 +180,101 @@ export async function fetchRegulations(): Promise<Regulation[]> {
   return camelize(await res.json())
 }
 
+export interface RegulatoryChangeItem {
+  id: number
+  substanceId: number | null
+  regulationId: string | null
+  changeType: string
+  detectedAt: string
+}
+
+export async function fetchRegulatoryFeed(
+  regulationId?: string,
+  since?: string,
+): Promise<RegulatoryChangeItem[]> {
+  const params = new URLSearchParams()
+  if (regulationId) params.append('regulation_id', regulationId)
+  if (since) params.append('since', since)
+  const query = params.toString() ? `?${params.toString()}` : ''
+  const res = await apiFetch(`/api/regulations/feed${query}`)
+  if (!res.ok) {
+    throw new Error(`Failed to fetch regulatory feed: ${res.status}`)
+  }
+  return camelize(await res.json())
+}
+
+export interface ShapFeatureContribution {
+  feature: string
+  value: number
+  contribution: number
+}
+
+export interface ShapExplanation {
+  cas: string
+  regulation: string
+  predictedRisk: number
+  baseValue: number
+  topFeatures: ShapFeatureContribution[]
+}
+
+export async function fetchShapExplanation(cas: string, regulationId: string): Promise<ShapExplanation> {
+  const res = await apiFetch(`/api/substances/${encodeURIComponent(cas)}/shap?reg=${encodeURIComponent(regulationId)}`)
+  if (!res.ok) {
+    throw new Error(`Failed to fetch SHAP explanation: ${res.status}`)
+  }
+  return camelize(await res.json())
+}
+
+export interface SubstanceSummary {
+  id: number
+  name: string
+  casNumber: string | null
+  ecNumber: string | null
+  smiles: string | null
+}
+
+export async function fetchSubstanceSummary(cas: string): Promise<SubstanceSummary> {
+  const res = await apiFetch(`/api/substances/${encodeURIComponent(cas)}/summary`)
+  if (!res.ok) {
+    throw new Error(`Failed to fetch substance summary: ${res.status}`)
+  }
+  return camelize(await res.json())
+}
+
+export interface ModelPerformance {
+  regulationId: string
+  metrics: Record<string, number>
+}
+
+export async function fetchModelPerformance(regulationId: string): Promise<ModelPerformance> {
+  const res = await apiFetch(`/api/admin/ml/regulations/${regulationId}/performance`)
+  if (!res.ok) {
+    throw new Error(`Failed to fetch performance: ${res.status}`)
+  }
+  return camelize(await res.json())
+}
+
+export interface ModelDrift {
+  regulationId: string
+  driftDetected: boolean
+}
+
+export async function fetchModelDrift(regulationId: string): Promise<ModelDrift> {
+  const res = await apiFetch(`/api/admin/ml/regulations/${regulationId}/drift`)
+  if (!res.ok) {
+    throw new Error(`Failed to fetch drift: ${res.status}`)
+  }
+  return camelize(await res.json())
+}
+
+export async function retrainModel(regulationId: string): Promise<{ regulationId: string; status: string }> {
+  const res = await apiFetch(`/api/admin/ml/regulations/${regulationId}/retrain`, { method: 'POST' })
+  if (!res.ok) {
+    throw new Error(`Failed to trigger retrain: ${res.status}`)
+  }
+  return camelize(await res.json())
+}
+
 export interface EnrichmentStatus {
   substanceCount: number
   summaryCount: number

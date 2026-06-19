@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useParams, useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { fetchBom, deleteBom, triggerScan, fetchScanResults } from '@/services/api'
@@ -37,7 +37,7 @@ export function BomDetailPage() {
   const id = Number(bomId)
   const isInvalidId = Number.isNaN(id)
 
-  const loadAll = async () => {
+  const loadAll = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -52,13 +52,15 @@ export function BomDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [id])
 
   useEffect(() => {
-    if (!isInvalidId) {
-      loadAll()
+    if (isInvalidId) return
+    const load = async () => {
+      await loadAll()
     }
-  }, [id])
+    load()
+  }, [id, loadAll, isInvalidId])
 
   const handleDelete = async () => {
     if (!bom) return

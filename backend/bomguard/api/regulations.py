@@ -1,8 +1,9 @@
 """Regulatory data endpoints."""
 
+from datetime import date
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 
 from bomguard.db import get_db
@@ -35,11 +36,20 @@ async def get_regulation(regulation_id: str, db: Session = Depends(get_db)) -> R
 
 
 @router.get("/feed")
-async def regulatory_feed(db: Session = Depends(get_db)) -> list[dict[str, Any]]:
-    """Recent regulatory changes."""
+async def regulatory_feed(
+    regulation_id: str | None = Query(None, description="Filter by regulation ID"),
+    since: date | None = Query(None, description="Filter by start date (ISO 8601 YYYY-MM-DD)"),
+    db: Session = Depends(get_db),
+) -> list[dict[str, Any]]:
+    """Recent regulatory changes with optional filtering."""
     from bomguard.models.database import RegulatoryChange
 
-    changes = db.query(RegulatoryChange).order_by(RegulatoryChange.detected_at.desc()).limit(50).all()
+    query = db.query(RegulatoryChange)
+    if regulation_id:
+        query = query.filter(RegulatoryChange.regulation_id == regulation_id)
+    if since:
+        query = query.filter(RegulatoryChange.detected_at >= since)
+    changes = query.order_by(RegulatoryChange.detected_at.desc()).limit(50).all()
     return [
         {
             "id": c.id,
