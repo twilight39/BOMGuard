@@ -5,6 +5,7 @@ from typing import Any, cast
 import numpy as np
 import pandas as pd
 import shap
+import xgboost as xgb
 
 from bomguard.ml.models.registry import RegulationModelRegistry
 
@@ -12,7 +13,7 @@ from bomguard.ml.models.registry import RegulationModelRegistry
 class SHAPExplainer:
     """Generate SHAP explanations for predictions."""
 
-    def __init__(self, model: object, feature_names: list[str]) -> None:
+    def __init__(self, model: xgb.XGBClassifier, feature_names: list[str]) -> None:
         self.model = model
         self.explainer = shap.TreeExplainer(model)
         self.feature_names = feature_names
