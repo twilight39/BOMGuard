@@ -14,10 +14,12 @@ class WebSocketManager:
 
     def __init__(self) -> None:
         self._connections: list[WebSocket] = []
+        self._loop: asyncio.AbstractEventLoop | None = None
 
     async def connect(self, websocket: WebSocket) -> None:
         await websocket.accept()
         self._connections.append(websocket)
+        self._loop = asyncio.get_running_loop()
 
     def disconnect(self, websocket: WebSocket) -> None:
         if websocket in self._connections:
@@ -37,13 +39,19 @@ class WebSocketManager:
         """Fire-and-forget broadcast from synchronous code.
 
         Tries to schedule on the running event loop (e.g. inside FastAPI).
+        If called from a different thread than the one that accepted the
+        WebSocket connections, falls back to the captured event loop so tests
+        and mixed sync/async callers still deliver the message.
         Silently ignores if no loop is available (e.g. plain Celery worker).
         """
         try:
             loop = asyncio.get_running_loop()
             loop.create_task(self.broadcast(message))
         except RuntimeError:
-            logger.debug("No event loop available for WebSocket broadcast")
+            if self._loop is not None:
+                asyncio.run_coroutine_threadsafe(self.broadcast(message), self._loop)
+            else:
+                logger.debug("No event loop available for WebSocket broadcast")
 
 
 ws_manager = WebSocketManager()

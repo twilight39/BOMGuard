@@ -1,5 +1,7 @@
 """Tests for WebSocket regulatory alerts."""
 
+import json
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -47,17 +49,20 @@ def test_broadcast_on_ingestion(db: Session, client: TestClient) -> None:
     db.commit()
 
     with client.websocket_connect("/api/regulations/ws") as websocket:
-        # Run scraper inside the websocket context so the broadcast arrives
+        # Run scraper inside the websocket context so the broadcast arrives.
+        # broadcast_sync captures the websocket event loop and can deliver from
+        # other threads (e.g. the test runner thread), so the message should be
+        # available on the client websocket.
         scraper = DummyScraper()
         result = run_scraper(scraper, db)
         assert result.changes_detected == 1
 
-        # Give the async broadcast a moment to arrive
-        import time
-        time.sleep(0.5)
+        raw = websocket.receive_text()
+        payload = json.loads(raw)
+        assert payload["type"] == "regulatory_change"
+        assert payload["regulation_id"] == "test_ws_reg"
+        assert payload["changes_detected"] == 1
 
-        # The broadcast is fire-and-forget; we can't guarantee delivery in tests
-        # because the TestClient event loop may differ. We at least verify
-        # the scraper ran without error and the connection stayed open.
+        # Connection should still be alive after the broadcast.
         websocket.send_text("ping")
         assert websocket.receive_text() == "pong"
