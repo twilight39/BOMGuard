@@ -64,7 +64,7 @@ ignore = ["E501", "ARG001", "ARG002", "B008"]
 known-first-party = ["bomguard"]
 
 [tool.ruff.lint.pep8-naming]
-extend-ignore-names = ["X", "y", "X_train", "X_test", "X_sample"]
+extend-ignore-names = ["X", "y", "X_train", "X_test", "X_sample", "x_train_full", "x_train", "x_val", "x_test"]
 
 [tool.ruff.lint.per-file-ignores]
 "migrations/*" = ["I001"]
@@ -73,10 +73,6 @@ extend-ignore-names = ["X", "y", "X_train", "X_test", "X_sample"]
 quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
-
-[[tool.mypy.overrides]]
-module = "bomguard.enrichment.pipeline"
-warn_unreachable = false
 
 [tool.mypy]
 python_version = "3.12"
