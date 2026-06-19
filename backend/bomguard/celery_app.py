@@ -14,6 +14,7 @@ celery_app = Celery(
         "bomguard.ingestion.tasks",
         "bomguard.enrichment.tasks",
         "bomguard.enrichment.summary_tasks",
+        "bomguard.ml.tasks",
     ],
 )
 
