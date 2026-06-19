@@ -6,6 +6,7 @@ from typing import Any, cast
 
 import joblib
 import pandas as pd
+import xgboost as xgb
 
 from bomguard.config import Settings
 
@@ -49,12 +50,12 @@ class RegulationModelRegistry:
             return None
         return cast("object", artifact["calibrated_model"])
 
-    def get_raw_model(self, regulation_id: str) -> object | None:
+    def get_raw_model(self, regulation_id: str) -> xgb.XGBClassifier | None:
         """Return the raw (uncalibrated) XGBoost model for SHAP."""
         artifact = self.load_model(regulation_id)
         if artifact is None:
             return None
-        return cast("object", artifact["raw_model"])
+        return cast("xgb.XGBClassifier", artifact["raw_model"])
 
     def get_feature_names(self, regulation_id: str) -> list[str] | None:
         """Return feature names used during training."""

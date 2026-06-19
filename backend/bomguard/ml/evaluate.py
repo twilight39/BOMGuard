@@ -1,15 +1,11 @@
 """Temporal holdout evaluation and split strategies."""
 
-from typing import TYPE_CHECKING
-
 import numpy as np
-
-if TYPE_CHECKING:
-    import pandas as pd
+import pandas as pd
 
 
 def get_split_strategy(
-    dates: "pd.Series",
+    dates: pd.Series,
 ) -> tuple[str, np.ndarray, np.ndarray]:
     """Auto-switch from random stratified to temporal split.
 
@@ -21,6 +17,7 @@ def get_split_strategy(
         Strategy is "temporal" when >= 6 months of history,
         otherwise "random" with an 80/20 stratified split.
     """
+    dates = pd.to_datetime(dates)
     n_batches = dates.dt.to_period("M").nunique()
 
     if n_batches >= 6:
