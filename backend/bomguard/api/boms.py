@@ -4,7 +4,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from bomguard.db import get_db
 from bomguard.metrics import bom_uploads_total
@@ -142,7 +142,12 @@ async def get_bom(
 ) -> BomDetailSchema:
     """Get BOM metadata and parts."""
     user_id = request.session.get("user_id")
-    bom = db.query(Bom).filter(Bom.id == bom_id).first()
+    bom = (
+        db.query(Bom)
+        .options(joinedload(Bom.parts))
+        .filter(Bom.id == bom_id)
+        .first()
+    )
     if not bom:
         raise HTTPException(status_code=404, detail="BOM not found.")
     if bom.user_id is not None and bom.user_id != user_id:

@@ -1,15 +1,37 @@
 http:
+  middlewares:
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 150
+        period: 1m
+    security-headers:
+      headers:
+        frameDeny: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+        referrerPolicy: "strict-origin-when-cross-origin"
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsSeconds: 31536000
+
   routers:
     api:
       rule: "Host(`api.localhost`)"
       service: api
       entryPoints:
         - web
+      middlewares:
+        - rate-limit
+        - security-headers
     frontend:
       rule: "Host(`localhost`)"
       service: frontend
       entryPoints:
         - web
+      middlewares:
+        - rate-limit
+        - security-headers
 
   services:
     api:
