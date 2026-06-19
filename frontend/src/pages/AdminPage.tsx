@@ -27,7 +27,10 @@ export function AdminPage() {
   }, [])
 
   React.useEffect(() => {
-    fetchStatus()
+    const run = async () => {
+      await fetchStatus()
+    }
+    run()
     const interval = setInterval(fetchStatus, 5000)
     return () => clearInterval(interval)
   }, [fetchStatus])

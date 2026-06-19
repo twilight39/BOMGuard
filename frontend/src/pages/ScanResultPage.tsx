@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { fetchBom, triggerScan, fetchScanResults } from '@/services/api'
@@ -51,7 +51,7 @@ export function ScanResultPage() {
 
   const id = Number(bomId)
 
-  const loadAll = async () => {
+  const loadAll = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -66,13 +66,15 @@ export function ScanResultPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [id])
 
   useEffect(() => {
-    if (!Number.isNaN(id)) {
-      loadAll()
+    if (Number.isNaN(id)) return
+    const load = async () => {
+      await loadAll()
     }
-  }, [id])
+    load()
+  }, [id, loadAll])
 
   const handleScan = async () => {
     setScanning(true)

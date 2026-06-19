@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { fetchBoms, loadSample, fetchSampleList } from '@/services/api'
 import type { Bom } from '@/types'
@@ -33,7 +33,7 @@ export function BomsPage() {
   const [loadingSample, setLoadingSample] = useState<string | null>(null)
   const navigate = useNavigate()
 
-  const loadBoms = async () => {
+  const loadBoms = useCallback(async () => {
     setLoading(true)
     try {
       const data = await fetchBoms()
@@ -41,12 +41,25 @@ export function BomsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
-    loadBoms()
-    fetchSampleList().then(setSamples).catch(() => setSamples([]))
-  }, [])
+    let cancelled = false
+    const load = async () => {
+      await loadBoms()
+    }
+    load()
+    fetchSampleList()
+      .then((data) => {
+        if (!cancelled) setSamples(data)
+      })
+      .catch(() => {
+        if (!cancelled) setSamples([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [loadBoms])
 
   const handleLoadSample = async (sampleId: string) => {
     setLoadingSample(sampleId)
