@@ -216,15 +216,25 @@ async def get_stats(db: Session = Depends(get_db)) -> dict[str, Any]:
     }
 
 
-@router.post("/enrich", dependencies=[Depends(require_admin_key)])
-async def trigger_enrichment(batch_size: int = 50) -> dict[str, Any]:
+async def _trigger_enrichment(batch_size: int = 50) -> dict[str, Any]:
     """Trigger backfill of regulatory summaries for all substances."""
     task = generate_all_summaries.delay(batch_size=batch_size)
     return {"status": "queued", "task_id": task.id}
 
 
-@router.get("/enrich/status")
-async def enrichment_status(db: Session = Depends(get_db)) -> dict[str, Any]:
+@router.post("/enrich", dependencies=[Depends(require_admin_key)])
+async def trigger_enrichment(batch_size: int = 50) -> dict[str, Any]:
+    """Trigger backfill of regulatory summaries for all substances."""
+    return await _trigger_enrichment(batch_size)
+
+
+@router.post("/ml/enrich", dependencies=[Depends(require_admin_key)])
+async def trigger_enrichment_legacy(batch_size: int = 50) -> dict[str, Any]:
+    """Legacy path for frontend compatibility."""
+    return await _trigger_enrichment(batch_size)
+
+
+async def _enrichment_status(db: Session) -> dict[str, Any]:
     """Check enrichment status and whether the backfill task is running."""
     substance_count = db.query(Substance).count()
     summary_count = db.query(RegulatorySummary).count()
@@ -263,3 +273,15 @@ async def enrichment_status(db: Session = Depends(get_db)) -> dict[str, Any]:
     if error_message:
         response["error"] = error_message
     return response
+
+
+@router.get("/enrich/status")
+async def enrichment_status(db: Session = Depends(get_db)) -> dict[str, Any]:
+    """Check enrichment status and whether the backfill task is running."""
+    return await _enrichment_status(db)
+
+
+@router.get("/ml/enrich/status")
+async def enrichment_status_legacy(db: Session = Depends(get_db)) -> dict[str, Any]:
+    """Legacy path for frontend compatibility."""
+    return await _enrichment_status(db)
