@@ -7,6 +7,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from bomguard.db import get_db
+from bomguard.metrics import scans_total
 from bomguard.models.database import Bom, BomPart, ScanResult
 from bomguard.models.schemas import ScanResultDetailSchema
 from bomguard.services.compliance_scanner import ComplianceScanner
@@ -80,7 +81,12 @@ async def trigger_scan(
         raise HTTPException(status_code=403, detail="Not authorized to scan this BOM")
 
     scanner = ComplianceScanner(db)
-    hits = scanner.scan_bom(bom_id)
+    try:
+        hits = scanner.scan_bom(bom_id)
+        scans_total.labels(status="completed").inc()
+    except Exception:
+        scans_total.labels(status="failed").inc()
+        raise
 
     return {
         "bom_id": bom_id,

@@ -7,14 +7,15 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from bomguard.db import get_db
+from bomguard.metrics import bom_uploads_total
 from bomguard.models.database import Bom, BomPart, ScanResult
 from bomguard.models.schemas import (
     BomDetailSchema,
     BomSchema,
     BomUploadResponse,
 )
-from bomguard.services.bom_parser import parse_bom
 from bomguard.seed import SAMPLE_MAP, load_sample_bom
+from bomguard.services.bom_parser import parse_bom
 
 router = APIRouter(prefix="/api/boms", tags=["BOMs"])
 
@@ -67,6 +68,7 @@ async def upload_bom(
 
     db.commit()
 
+    bom_uploads_total.labels(source="upload").inc()
     return BomUploadResponse(id=bom.id, filename=file.filename, status="pending")
 
 
@@ -86,6 +88,7 @@ async def load_sample(
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
+    bom_uploads_total.labels(source="sample").inc()
     return BomSchema.model_validate(bom)
 
 
@@ -106,10 +109,11 @@ async def list_boms(
     """List current user's BOMs ordered by creation date descending."""
     user_id = request.session.get("user_id")
     query = db.query(Bom)
-    if user_id:
-        query = query.filter(Bom.user_id == user_id)
-    else:
-        query = query.filter(Bom.user_id.is_(None))
+    query = (
+        query.filter(Bom.user_id == user_id)
+        if user_id
+        else query.filter(Bom.user_id.is_(None))
+    )
     boms = query.order_by(Bom.created_at.desc()).all()
 
     # Attach hit counts

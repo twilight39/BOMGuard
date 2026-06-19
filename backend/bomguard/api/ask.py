@@ -1,12 +1,12 @@
 """LLM Q&A endpoints (REST + WebSocket)."""
 
-import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 
-from bomguard.db import get_db, SessionLocal
+from bomguard.db import SessionLocal, get_db
+from bomguard.metrics import llm_queries_total
 from bomguard.models.database import ChatMessage, ChatThread
 from bomguard.services.llm_service import RegulatoryLLMService
 
@@ -28,6 +28,7 @@ async def ask_question(
     question = request.get("question", "")
     if not question:
         return {"answer": "No question provided.", "sources": []}
+    llm_queries_total.labels(type="rest").inc()
     return await llm.ask(db, question)
 
 
@@ -38,11 +39,7 @@ async def ask_websocket(websocket: WebSocket) -> None:
     llm = RegulatoryLLMService()
 
     # Read user_id from session cookie via websocket scope
-    user_id: str | None = None
-    try:
-        user_id = websocket.scope.get("session", {}).get("user_id")
-    except Exception:
-        pass
+    user_id: str | None = websocket.scope.get("session", {}).get("user_id")
 
     try:
         while True:
@@ -53,6 +50,8 @@ async def ask_websocket(websocket: WebSocket) -> None:
             if not question:
                 await websocket.send_json({"type": "error", "message": "No question provided."})
                 continue
+
+            llm_queries_total.labels(type="websocket").inc()
 
             db = SessionLocal()
             try:
@@ -70,8 +69,10 @@ async def ask_websocket(websocket: WebSocket) -> None:
 
                 # Verify thread ownership
                 if thread_id is not None and user_id:
-                    thread = db.query(ChatThread).filter(ChatThread.id == thread_id).first()
-                    if not thread or thread.user_id != user_id:
+                    existing_thread = (
+                        db.query(ChatThread).filter(ChatThread.id == thread_id).first()
+                    )
+                    if not existing_thread or existing_thread.user_id != user_id:
                         await websocket.send_json(
                             {"type": "error", "message": "Thread not found or not authorized."}
                         )
@@ -152,8 +153,7 @@ async def ask_websocket(websocket: WebSocket) -> None:
                 db.close()
     except WebSocketDisconnect:
         pass
-    except Exception as exc:
-        logger.exception("WebSocket error")
+    except Exception:
         await websocket.send_json(
             {"type": "error", "message": "An error occurred. Please try again."}
         )
