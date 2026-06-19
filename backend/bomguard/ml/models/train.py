@@ -1,10 +1,12 @@
 """XGBoost + Optuna training pipeline with calibration and MLflow logging."""
 
 import json
+import urllib.request
 import warnings
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import joblib
 import mlflow
@@ -31,6 +33,31 @@ from bomguard.models.database import (
 
 settings = Settings()
 optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+
+def _is_mlflow_reachable(tracking_uri: str) -> bool:
+    """Return True if the MLflow tracking URI is reachable within ~2 seconds.
+
+    File-backed URIs are treated as always available. HTTP/HTTPS URIs get a
+    lightweight HEAD request so that training does not hang inside
+    ``mlflow.start_run`` when the server is down.
+    """
+    parsed = urlparse(tracking_uri)
+    if parsed.scheme in ("file", ""):
+        return True
+    if parsed.scheme not in ("http", "https"):
+        return False
+    try:
+        req = urllib.request.Request(
+            tracking_uri,
+            method="HEAD",
+            headers={"User-Agent": "bomguard-mlflow-check/1.0"},
+        )
+        with urllib.request.urlopen(req, timeout=2):
+            return True
+    except Exception:
+        return False
+
 
 TARGET_METRICS = {
     "roc_auc": 0.75,
@@ -259,20 +286,21 @@ def train_regulation_model(
     passed = _metrics_pass(metrics)
     tag = "production" if passed else "rejected"
 
-    # MLflow logging
-    mlflow.set_tracking_uri(settings.mlflow_tracking_uri)
+    # MLflow logging (optional; skip if tracking server is unreachable)
     run_id: str | None = None
-    try:
-        with mlflow.start_run(run_name=f"bomguard_{regulation_id}_{datetime.now(UTC).isoformat()}") as run:
-            run_id = run.info.run_id
-            mlflow.set_tag("regulation_id", regulation_id)
-            mlflow.set_tag("model_stage", tag)
-            mlflow.log_params(best_params)
-            mlflow.log_metrics(metrics)
-            mlflow.xgboost.log_model(raw_model, artifact_path="model")
-    except Exception:
-        # MLflow is optional; don't fail training if server unreachable
-        run_id = None
+    if _is_mlflow_reachable(settings.mlflow_tracking_uri):
+        mlflow.set_tracking_uri(settings.mlflow_tracking_uri)
+        try:
+            with mlflow.start_run(run_name=f"bomguard_{regulation_id}_{datetime.now(UTC).isoformat()}") as run:
+                run_id = run.info.run_id
+                mlflow.set_tag("regulation_id", regulation_id)
+                mlflow.set_tag("model_stage", tag)
+                mlflow.log_params(best_params)
+                mlflow.log_metrics(metrics)
+                mlflow.xgboost.log_model(raw_model, artifact_path="model")
+        except Exception:
+            # MLflow is optional; don't fail training if server unreachable
+            run_id = None
 
     # Persist to disk
     artifact_dir = Path(settings.model_artifact_path)

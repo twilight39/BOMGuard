@@ -74,10 +74,6 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 
-[[tool.mypy.overrides]]
-module = "bomguard.enrichment.pipeline"
-warn_unreachable = false
-
 [tool.mypy]
 python_version = "3.12"
 warn_return_any = true
