@@ -128,8 +128,13 @@ async def model_drift(regulation_id: str, db: Session = Depends(get_db)) -> dict
         current_df = _changes_to_df(current_changes)
         baseline_df = _changes_to_df(baseline_changes)
 
-        from evidently.metric_preset import DataDriftPreset
-        from evidently.report import Report
+        try:
+            from evidently.metric_preset import DataDriftPreset
+            from evidently.report import Report
+        except ImportError:
+            # Evidently 0.7.x relocated the original API to the legacy namespace.
+            from evidently.legacy.metric_preset import DataDriftPreset
+            from evidently.legacy.report import Report
 
         report = Report(metrics=[DataDriftPreset()])
         report.run(reference_data=baseline_df, current_data=current_df)

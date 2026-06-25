@@ -42,8 +42,6 @@ async def recent_scans(
         db.query(Bom, latest_scan.c.scanned_at, hit_counts.c.hit_count)
         .join(latest_scan, Bom.id == latest_scan.c.bom_id)
         .outerjoin(hit_counts, Bom.id == hit_counts.c.bom_id)
-        .order_by(latest_scan.c.scanned_at.desc())
-        .limit(limit)
     )
 
     # Filter by user if authenticated (include public BOMs too)
@@ -52,7 +50,9 @@ async def recent_scans(
     else:
         query = query.filter(Bom.user_id.is_(None))
 
-    results = query.all()
+    results = (
+        query.order_by(latest_scan.c.scanned_at.desc()).limit(limit).all()
+    )
 
     return [
         {

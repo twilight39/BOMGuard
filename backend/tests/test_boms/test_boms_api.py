@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from bomguard.db import get_db
 from bomguard.main import create_app
-from bomguard.models.database import Bom, BomPart
+from bomguard.models.database import Bom, BomPart, Substance, SubstanceRegulationStatus
 
 app = create_app()
 client = TestClient(app)
@@ -117,3 +117,27 @@ def test_delete_bom(db: Session) -> None:
 def test_delete_bom_not_found(db: Session) -> None:
     response = client.delete("/api/boms/99999")
     assert response.status_code == 404
+
+
+def test_upload_csv_creates_substances(db: Session) -> None:
+    """Uploading a BOM with CAS numbers creates Substance rows and statuses."""
+    data, name = _csv_file(pd.DataFrame({
+        "Part Number": ["R1"],
+        "CAS": ["123-45-67|890-12-34"],
+    }))
+    response = client.post(
+        "/api/boms/upload",
+        files={"file": (name, io.BytesIO(data), "text/csv")},
+    )
+    assert response.status_code == 200
+
+    substances = db.query(Substance).filter(Substance.cas_number.in_(["123-45-67", "890-12-34"])).all()
+    assert len(substances) == 2
+
+    statuses = (
+        db.query(SubstanceRegulationStatus)
+        .filter(SubstanceRegulationStatus.substance_id.in_([s.id for s in substances]))
+        .all()
+    )
+    assert len(statuses) > 0
+    assert all(s.status == "not_restricted" for s in statuses)

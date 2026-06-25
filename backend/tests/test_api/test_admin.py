@@ -152,8 +152,9 @@ def test_drift_endpoint_with_mocked_evidently(
             },
         ]
     }
-    monkeypatch.setattr("evidently.report.Report", lambda _metrics: mock_report)
-    monkeypatch.setattr("evidently.metric_preset.DataDriftPreset", lambda: MagicMock())
+    # Evidently 0.7.x moved the original report API to the legacy namespace.
+    monkeypatch.setattr("evidently.legacy.report.Report", lambda **_kwargs: mock_report)
+    monkeypatch.setattr("evidently.legacy.metric_preset.DataDriftPreset", lambda: MagicMock())
 
     response = admin_db_client.get(f"/api/admin/ml/regulations/{seed_regulation.id}/drift")
     assert response.status_code == 200

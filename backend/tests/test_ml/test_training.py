@@ -14,9 +14,11 @@ from bomguard.ml.models.train import (
     _metrics_pass,
     _precision_at_k,
     load_training_data,
+    train_and_persist,
     train_regulation_model,
 )
 from bomguard.models.database import (
+    MLModelPerformance,
     Regulation,
     Substance,
     SubstanceProperties,
@@ -204,3 +206,33 @@ def test_registry_predict(ml_test_dir: Path) -> None:
     meta = registry.get_metadata("test_reg_predict")
     assert meta is not None
     assert meta["regulation_id"] == "test_reg_predict"
+
+
+def test_train_and_persist_writes_performance_record(db: Session) -> None:
+    """train_and_persist writes an MLModelPerformance row for the dashboard."""
+    reg = Regulation(id="test_persist_reg", name="Test Persist Regulation", ml_enabled=True)
+    db.add(reg)
+
+    for i in range(60):
+        _seed_substance(db, i + 1000, f"456-78-{i:02d}", restricted=i < 30, regulation_id="test_persist_reg")
+    db.commit()
+
+    result = train_and_persist(db, "test_persist_reg")
+
+    # Regulation row updated
+    db.refresh(reg)
+    assert reg.last_model_trained is not None
+    assert reg.ml_model_version == result["metadata"]["version"]
+
+    # Performance record created
+    perf = (
+        db.query(MLModelPerformance)
+        .filter_by(regulation_id="test_persist_reg")
+        .order_by(MLModelPerformance.trained_at.desc())
+        .first()
+    )
+    assert perf is not None
+    assert perf.model_version == result["metadata"]["version"]
+    assert perf.roc_auc == pytest.approx(result["metrics"]["roc_auc"])
+    assert perf.n_train_positive == result["metrics"]["n_positive_train"]
+    assert perf.n_test_positive == result["metrics"]["n_positive_test"]

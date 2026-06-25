@@ -1,12 +1,12 @@
 """Seed script for initial database data."""
 
-import os
 from pathlib import Path
 
 from sqlalchemy.orm import Session
 
 from bomguard.models.database import Bom, BomPart, Regulation
 from bomguard.services.bom_parser import parse_bom
+from bomguard.services.bom_substances import sync_bom_substances
 
 REGULATIONS = [
     {
@@ -111,6 +111,9 @@ def load_sample_bom(db: Session, sample_id: str, user_id: str | None = None) -> 
         contents = f.read()
 
     parts = parse_bom(contents, filename)
+
+    # Track BOM CAS numbers as substances for ML training.
+    sync_bom_substances(db, parts)
 
     bom = Bom(
         name=display_name,

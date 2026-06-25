@@ -12,6 +12,43 @@ from bomguard.models.database import RegulatoryChange, Substance, SubstanceRegul
 from bomguard.websocket import ws_manager
 
 
+def ensure_negative_labels(db: Session, regulation_id: str) -> int:
+    """Create ``not_restricted`` statuses for substances missing a status.
+
+    After scraping the positive (restricted) list for a regulation, any
+    substance already in the database that does not have a status for this
+    regulation is treated as a negative example. This is required for the
+    per-regulation ML classifiers to have both classes available.
+
+    Returns the number of ``not_restricted`` rows created.
+    """
+    existing_statuses = (
+        db.query(SubstanceRegulationStatus.substance_id)
+        .filter_by(regulation_id=regulation_id)
+        .subquery()
+    )
+    missing_substance_ids = (
+        db.query(Substance.id)
+        .filter(Substance.id.notin_(existing_statuses.select()))
+        .all()
+    )
+
+    created = 0
+    for (substance_id,) in missing_substance_ids:
+        db.add(
+            SubstanceRegulationStatus(
+                substance_id=substance_id,
+                regulation_id=regulation_id,
+                status="not_restricted",
+            )
+        )
+        created += 1
+
+    if created:
+        db.commit()
+    return created
+
+
 def _get_change_hash(raw_data: dict[str, Any]) -> str:
     return hashlib.sha256(json.dumps(raw_data, sort_keys=True).encode()).hexdigest()
 
@@ -147,6 +184,9 @@ def run_scraper(scraper: RegulationScraper, db: Session) -> IngestionResult:
             result.statuses_created += 1
 
     db.commit()
+
+    # Ensure the regulation has negative examples for ML training.
+    result.negative_statuses_created = ensure_negative_labels(db, scraper.regulation_id)
 
     if result.changes_detected > 0:
         ws_manager.broadcast_sync({

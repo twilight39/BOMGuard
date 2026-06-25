@@ -20,6 +20,7 @@ ENV UV_COMPILE_BYTECODE=1
 
 # Copy dependency metadata
 COPY pyproject.toml ./
+COPY uv.lock ./
 COPY README.md ./
 
 # Install dependencies with BuildKit cache mount for uv cache.

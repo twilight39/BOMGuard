@@ -7,8 +7,9 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from bomguard.db import get_db
+from bomguard.enrichment.tasks import enrich_substance
 from bomguard.metrics import bom_uploads_total
-from bomguard.models.database import Bom, BomPart, ScanResult
+from bomguard.models.database import Bom, BomPart, ScanResult, Substance
 from bomguard.models.schemas import (
     BomDetailSchema,
     BomSchema,
@@ -16,6 +17,7 @@ from bomguard.models.schemas import (
 )
 from bomguard.seed import SAMPLE_MAP, load_sample_bom
 from bomguard.services.bom_parser import parse_bom
+from bomguard.services.bom_substances import sync_bom_substances
 
 router = APIRouter(prefix="/api/boms", tags=["BOMs"])
 
@@ -37,6 +39,12 @@ async def upload_bom(
         parts = parse_bom(contents, file.filename)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    # Ensure CAS numbers referenced by the BOM are tracked as substances.
+    # These become negative training examples for all regulations.
+    new_substances = sync_bom_substances(db, parts)
+    for substance in new_substances:
+        enrich_substance.delay(substance.id)
 
     name = file.filename.rsplit(".", 1)[0]
     file_format = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else None
@@ -87,6 +95,18 @@ async def load_sample(
         bom = load_sample_bom(db, sample_id, user_id=user_id)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    # Enrich any new substances created from the sample BOM's CAS numbers.
+    for part in bom.parts:
+        if not part.cas_numbers:
+            continue
+        for cas in part.cas_numbers.split("|"):
+            cas = cas.strip()
+            if not cas:
+                continue
+            substance = db.query(Substance).filter_by(cas_number=cas).first()
+            if substance:
+                enrich_substance.delay(substance.id)
 
     bom_uploads_total.labels(source="sample").inc()
     return BomSchema.model_validate(bom)

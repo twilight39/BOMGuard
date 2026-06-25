@@ -47,11 +47,15 @@ class WebSocketManager:
         try:
             loop = asyncio.get_running_loop()
             loop.create_task(self.broadcast(message))
+            return
         except RuntimeError:
-            if self._loop is not None:
-                asyncio.run_coroutine_threadsafe(self.broadcast(message), self._loop)
-            else:
-                logger.debug("No event loop available for WebSocket broadcast")
+            pass
+
+        loop = self._loop
+        if loop is not None and not loop.is_closed():
+            asyncio.run_coroutine_threadsafe(self.broadcast(message), loop)
+        else:
+            logger.debug("No event loop available for WebSocket broadcast")
 
 
 ws_manager = WebSocketManager()

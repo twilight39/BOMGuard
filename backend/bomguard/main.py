@@ -25,6 +25,45 @@ from bomguard.api.substances import router as substances_router
 from bomguard.config import Settings
 from bomguard.models.schemas import HealthCheckResponse
 
+# Custom gauges for ML model performance and regulatory data.
+# Defined at module level so they are only registered once even if create_app()
+# is called multiple times in the same process (e.g. during tests).
+_ml_roc_gauge = Gauge(
+    "bomguard_ml_model_roc_auc",
+    "Latest ROC-AUC per regulation",
+    ["regulation_id"],
+)
+_ml_ap_gauge = Gauge(
+    "bomguard_ml_model_average_precision",
+    "Latest average precision per regulation",
+    ["regulation_id"],
+)
+_ml_brier_gauge = Gauge(
+    "bomguard_ml_model_brier_score",
+    "Latest Brier score per regulation",
+    ["regulation_id"],
+)
+_ml_promoted_gauge = Gauge(
+    "bomguard_ml_model_promoted",
+    "Whether the latest model is promoted to production",
+    ["regulation_id"],
+)
+_ml_days_since_trained_gauge = Gauge(
+    "bomguard_ml_model_days_since_trained",
+    "Days since the last model training per regulation",
+    ["regulation_id"],
+)
+_regulation_substances_gauge = Gauge(
+    "bomguard_regulation_substances",
+    "Number of restricted substances per regulation",
+    ["regulation_id"],
+)
+_last_scrape_gauge = Gauge(
+    "bomguard_last_scrape_timestamp_seconds",
+    "Unix timestamp of the last detected regulatory change per regulation",
+    ["regulation_id"],
+)
+
 
 def run_migrations() -> None:
     """Run Alembic migrations on application startup."""
@@ -115,43 +154,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     instrumentator = Instrumentator()
     instrumentator.instrument(app).expose(
         app, endpoint="/api/metrics/internal", include_in_schema=False
-    )
-
-    # Custom gauges for ML model performance and regulatory data.
-    _ml_roc_gauge = Gauge(
-        "bomguard_ml_model_roc_auc",
-        "Latest ROC-AUC per regulation",
-        ["regulation_id"],
-    )
-    _ml_ap_gauge = Gauge(
-        "bomguard_ml_model_average_precision",
-        "Latest average precision per regulation",
-        ["regulation_id"],
-    )
-    _ml_brier_gauge = Gauge(
-        "bomguard_ml_model_brier_score",
-        "Latest Brier score per regulation",
-        ["regulation_id"],
-    )
-    _ml_promoted_gauge = Gauge(
-        "bomguard_ml_model_promoted",
-        "Whether the latest model is promoted to production",
-        ["regulation_id"],
-    )
-    _ml_days_since_trained_gauge = Gauge(
-        "bomguard_ml_model_days_since_trained",
-        "Days since the last model training per regulation",
-        ["regulation_id"],
-    )
-    _regulation_substances_gauge = Gauge(
-        "bomguard_regulation_substances",
-        "Number of restricted substances per regulation",
-        ["regulation_id"],
-    )
-    _last_scrape_gauge = Gauge(
-        "bomguard_last_scrape_timestamp_seconds",
-        "Unix timestamp of the last detected regulatory change per regulation",
-        ["regulation_id"],
     )
 
     @app.get("/api/metrics")

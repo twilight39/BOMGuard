@@ -21,11 +21,13 @@ from sklearn.metrics import (
     brier_score_loss,
     roc_auc_score,
 )
+from sklearn.model_selection import StratifiedShuffleSplit
 from sqlalchemy.orm import Session
 
 from bomguard.config import Settings
 from bomguard.ml.evaluate import get_split_strategy
 from bomguard.models.database import (
+    MLModelPerformance,
     Regulation,
     SubstanceProperties,
     SubstanceRegulationStatus,
@@ -206,23 +208,27 @@ def train_regulation_model(
             - metrics: dict of test-set metrics
             - metadata: training run info
     """
-    strategy, train_idx, test_idx = get_split_strategy(dates)
+    strategy, train_idx, test_idx = get_split_strategy(dates, y)
 
     x_train_full = X.iloc[train_idx]
     y_train_full = y.iloc[train_idx]
     x_test = X.iloc[test_idx]
     y_test = y.iloc[test_idx]
 
-    # Internal validation split for Optuna early stopping
-    n_train = len(x_train_full)
-    val_size = max(1, int(n_train * 0.2))
-    val_idx = x_train_full.sample(n=val_size, random_state=42).index
-    train_idx_inner = x_train_full.index.difference(val_idx)
+    # Internal validation split for Optuna early stopping.
+    # Stratify so both classes are present in train and validation even when
+    # the data is highly imbalanced (e.g. REACH SVHC has few negatives).
+    inner_split = StratifiedShuffleSplit(
+        n_splits=1, test_size=0.2, random_state=42
+    )
+    train_idx_inner, val_idx = next(
+        inner_split.split(np.zeros((len(x_train_full), 1)), y_train_full)
+    )
 
-    x_train = x_train_full.loc[train_idx_inner]
-    y_train = y_train_full.loc[train_idx_inner]
-    x_val = x_train_full.loc[val_idx]
-    y_val = y_train_full.loc[val_idx]
+    x_train = x_train_full.iloc[train_idx_inner]
+    y_train = y_train_full.iloc[train_idx_inner]
+    x_val = x_train_full.iloc[val_idx]
+    y_val = y_train_full.iloc[val_idx]
 
     def _objective(trial: optuna.Trial) -> float:
         params = {
@@ -235,6 +241,9 @@ def train_regulation_model(
             "gamma": trial.suggest_float("gamma", 0.0, 5.0),
             "reg_alpha": trial.suggest_float("reg_alpha", 1e-8, 10.0, log=True),
             "reg_lambda": trial.suggest_float("reg_lambda", 1e-8, 10.0, log=True),
+            "scale_pos_weight": float(
+                (len(y_train) - y_train.sum()) / max(y_train.sum(), 1)
+            ),
         }
         model = xgb.XGBClassifier(
             **params,
@@ -257,10 +266,15 @@ def train_regulation_model(
     study.optimize(_objective, n_trials=n_trials, show_progress_bar=False)
 
     best_params = study.best_params
+    n_pos_train = int(y_train_full.sum())
+    n_neg_train = len(y_train_full) - n_pos_train
+    scale_pos_weight = float(n_neg_train / max(n_pos_train, 1))
+
     best_params.update({
         "tree_method": "hist",
         "eval_metric": "logloss",
         "random_state": 42,
+        "scale_pos_weight": scale_pos_weight,
     })
 
     # Train final model on full training set with best hyperparameters
@@ -269,9 +283,21 @@ def train_regulation_model(
         warnings.simplefilter("ignore")
         raw_model.fit(x_train_full, y_train_full)
 
-    # Calibrate probabilities (isotonic, 3-fold CV on holdout)
-    calibrated = CalibratedClassifierCV(raw_model, method="isotonic", cv=3)
-    calibrated.fit(x_test, y_test)
+    # Calibrate probabilities (isotonic, CV on holdout).
+    # With very few test examples of one class, 3-fold CV is impossible; fall
+    # back to fewer folds or skip calibration and use the raw model scores.
+    n_pos_test = int(y_test.sum())
+    n_neg_test = len(y_test) - n_pos_test
+    min_class_test = min(n_pos_test, n_neg_test)
+
+    if min_class_test >= 3:
+        calibrated = CalibratedClassifierCV(raw_model, method="isotonic", cv=3)
+        calibrated.fit(x_test, y_test)
+    elif min_class_test >= 2:
+        calibrated = CalibratedClassifierCV(raw_model, method="isotonic", cv=2)
+        calibrated.fit(x_test, y_test)
+    else:
+        calibrated = raw_model
 
     # Evaluate on test set
     y_proba = calibrated.predict_proba(x_test)[:, 1]
@@ -343,18 +369,54 @@ def train_regulation_model(
 
 
 def train_and_persist(db: Session, regulation_id: str) -> dict[str, Any]:
-    """End-to-end helper: load data, train, persist, and update Regulation row.
+    """End-to-end helper: load data, train, persist, and update DB records.
+
+    Updates both the Regulation row and creates an MLModelPerformance row
+    so the admin dashboard can display training results.
 
     Returns the training result dict.
     """
     X, y, dates = load_training_data(db, regulation_id)
     result = train_regulation_model(regulation_id, X, y, dates)
 
+    metrics = result["metrics"]
+    metadata = result["metadata"]
+    now = datetime.now(UTC)
+
     # Update regulation record
     reg = db.query(Regulation).filter_by(id=regulation_id).first()
     if reg:
-        reg.last_model_trained = datetime.now(UTC)
-        reg.ml_model_version = result["metadata"]["version"]
-        db.commit()
+        reg.last_model_trained = now
+        reg.ml_model_version = metadata["version"]
+
+    # Persist performance record for the admin dashboard
+    holdout_cutoff = None
+    if dates is not None and not dates.empty:
+        train_dates = dates.loc[X.index]
+        max_date = train_dates.max()
+        holdout_cutoff = max_date.date() if hasattr(max_date, "date") else max_date
+
+    performance = MLModelPerformance(
+        regulation_id=regulation_id,
+        model_version=metadata["version"],
+        mlflow_run_id=metadata.get("mlflow_run_id"),
+        trained_at=now,
+        roc_auc=metrics.get("roc_auc"),
+        average_precision=metrics.get("average_precision"),
+        precision_at_100=metrics.get("precision_at_100"),
+        brier_score=metrics.get("brier_score"),
+        n_train_positive=metrics.get("n_positive_train"),
+        n_train_negative=metrics.get("n_train") - metrics.get("n_positive_train")
+        if metrics.get("n_train") is not None and metrics.get("n_positive_train") is not None
+        else None,
+        n_test_positive=metrics.get("n_positive_test"),
+        n_test_negative=metrics.get("n_test") - metrics.get("n_positive_test")
+        if metrics.get("n_test") is not None and metrics.get("n_positive_test") is not None
+        else None,
+        holdout_cutoff_date=holdout_cutoff,
+        promoted_to_production=metadata.get("tag") == "production",
+    )
+    db.add(performance)
+    db.commit()
 
     return result

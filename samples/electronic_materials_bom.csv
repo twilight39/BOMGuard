@@ -1,0 +1,61 @@
+line_number,level,part_number,description,manufacturer,supplier,quantity,unit,cas_numbers
+1,0,PCB-FR4-001,FR4 PCB substrate 4-layer 1.6mm,Generic,PCBFab,1,pcs,14808-60-7|1344-28-1|79-94-7
+2,1,SOLDER-SAC305,Lead-free SAC305 solder paste,Senju,DigiKey,50,g,7440-31-5|7440-22-4|7440-50-8
+3,1,C-0603-X7R-100N,MLCC capacitor 100nF 50V X7R 0603,Murata,DigiKey,20,pcs,12047-27-7
+4,1,C-TANT-10U-16V,Tantalum capacitor 10uF 16V case A,Kemet,DigiKey,5,pcs,1314-61-0|7440-25-7
+5,1,R-0603-10K,Thick film resistor 10K 1% 0603,Yageo,DigiKey,30,pcs,12036-10-1|1344-28-1
+6,1,IC-SILICON-DIE,Silicon integrated circuit die,TSMC,Foundry,1,pcs,7440-21-3
+7,1,DIE-ATTACH-EPOXY,Die attach epoxy adhesive,Henkel,DigiKey,1,pcs,1675-54-3
+8,1,WIREBOND-AU,Gold wirebond wire 25um,Kulicke & Soffa,Supplier,1,m,7440-57-5
+9,1,LEADFRAME-CU,Copper leadframe with Ni/Pd/Au plating,ASE,Foundry,1,pcs,7440-50-8|7440-02-0|7440-05-3|7440-57-5
+10,1,MOLD-COMPOUND,Epoxy molding compound for IC packages,Sumitomo,DigiKey,10,g,25036-53-7|9003-35-4
+11,1,LED-0603-W,White LED 0603 20mA,Nichia,DigiKey,5,pcs,25617-97-4|1312-43-2
+12,1,LED-PHOSPHOR,YAG phosphor for white LEDs,Intematix,DigiKey,1,g,12003-49-5
+13,1,XTAL-QUARTZ,Quartz crystal 24MHz 10ppm,Epson,DigiKey,1,pcs,14808-60-7
+14,1,CONNECTOR-USB-C,USB Type-C connector 24-pin,Amphenol,DigiKey,1,pcs,7440-50-8|7440-57-5|7440-02-0
+15,1,HOUSING-ABS,ABS plastic enclosure,Generic,Supplier,1,pcs,9003-56-9
+16,1,BATTERY-LIION-18650,Lithium-ion 18650 battery cell,Samsung SDI,DigiKey,1,pcs,12190-79-3|7782-42-5|108-32-7
+17,1,BATTERY-ELECTROLYTE,Li-ion battery electrolyte solvent,BASF,ChemSupply,10,g,108-32-7|110-71-4
+18,1,THERMAL-PASTE,Silicone thermal interface material,Shin-Etsu,DigiKey,2,g,63394-02-5|1314-13-2
+19,1,FAN-BEARING-GREASE,Ball bearing lubricating grease,NMB,DigiKey,1,g,8012-89-3|57-11-4
+20,1,DISPLAY-LCD,LCD glass and liquid crystal panel,BOE,Supplier,1,pcs,14808-60-7|25038-59-9
+21,1,POLARIZER-FILM,LCD polarizer film,Nitto,Supplier,1,pcs,25038-59-9
+22,1,TOUCHSCREEN-ITO,Indium tin oxide touchscreen film,TPK,Supplier,1,pcs,50926-11-9
+23,1,FLEX-PCB-PI,Polyimide flexible PCB substrate,DuPont,DigiKey,1,pcs,25036-53-7
+24,1,SHIELD-CAN,EMI shielding can tin-plated steel,Leader Tech,DigiKey,1,pcs,7440-31-5|7439-89-6
+25,1,ANTENNA-CERAMIC,Ceramic chip antenna 2.4GHz,Johanson,DigiKey,1,pcs,12047-27-7
+26,1,COAX-CABLE,RF coaxial cable RG-178,Tensolite,Supplier,0.5,m,9002-84-0|7440-50-8
+27,1,RELAY-REED,Reed switch with inert gas,Littelfuse,DigiKey,2,pcs,7440-57-5|7439-90-9
+28,1,FUSE-SMD,SMD fuse silver-ceramic,Bourns,DigiKey,2,pcs,7440-22-4|1344-28-1
+29,1,INDUCTOR-FERRITE,Ferrite chip inductor 10uH,Murata,DigiKey,5,pcs,12023-91-5
+30,1,TRANSFORMER-CORE,Ferrite transformer core,TDK,DigiKey,2,pcs,12023-91-5
+31,1,HEATSINK-AL,Aluminum extruded heatsink,Generic,Supplier,1,pcs,7429-90-5
+32,1,THERMAL-PAD,Gap filler thermal pad silicone,Bergquist,DigiKey,1,pcs,63394-02-5|1344-28-1
+33,1,KEYPAD-SILICONE,Silicone rubber keypad,Stockwell,Supplier,1,pcs,63394-02-5
+34,1,LENS-PMMA,PMMA LED lens,Carclo,DigiKey,5,pcs,9011-14-7
+35,1,GASKET-CR,Chloroprene rubber gasket,Generic,Supplier,1,pcs,9010-98-4
+36,1,ADHESIVE-CA,Cyanoacrylate adhesive,Loctite,DigiKey,2,g,9011-14-7|67-64-1
+37,1,ADHESIVE-EPOXY,Two-part epoxy adhesive,3M,DigiKey,5,g,1675-54-3
+38,1,CONFORMAL-COATING,Acrylic conformal coating,HumiSeal,DigiKey,10,g,9011-14-7|67-63-0
+39,1,SOLDER-FLUX,Rosin-based no-clean flux,AIM,DigiKey,5,g,8050-09-7|57-11-4
+40,1,CLEANING-ISOPROPANOL,Isopropyl alcohol cleaning solvent,Fisher,ChemSupply,100,ml,67-63-0
+41,1,CLEANING-ACETONE,Acetone cleaning solvent,Fisher,ChemSupply,100,ml,67-64-1
+42,1,LABEL-PET,Polyester label stock,3M,Supplier,10,pcs,25038-59-9
+43,1,PACKAGING-PE,Polyethylene anti-static bag,Generic,Supplier,5,pcs,9002-88-4
+44,1,PACKAGING-PS,Polystyrene foam packaging,Generic,Supplier,2,pcs,9003-53-6
+45,1,CABLE-PVC,PVC insulated wire 24AWG,Alpha Wire,DigiKey,5,m,9002-86-2|7440-50-8
+46,1,CABLE-PP,Polypropylene cable tie,Generic,Supplier,20,pcs,9003-07-0
+47,1,POTTING-PU,Polyurethane potting compound,Henkel,DigiKey,50,g,9009-54-5
+48,1,VARNISH-PA,Phenolic conformal varnish,Electrodag,DigiKey,25,g,9003-35-4|108-88-3
+49,1,TAPE-KAPTON,Polyimide tape 25mm,Kapton,DigiKey,1,roll,25036-53-7
+50,1,SPACER-NYLON,Nylon 6/6 standoff,Keystone,DigiKey,10,pcs,32131-17-2
+51,1,SCREW-SS,Stainless steel M3 screw,Generic,Supplier,10,pcs,7439-89-6|7440-02-0
+52,1,WASHER-CU,Copper washer for grounding,Generic,Supplier,10,pcs,7440-50-8
+53,1,CLIP-SPRING-STEEL,Spring steel battery contact,Keystone,DigiKey,4,pcs,7439-89-6
+54,1,MAGNET-ND,Neodymium magnet,N52 Magnets,Supplier,2,pcs,12023-91-5
+55,1,CRYSTAL-SAW,Surface acoustic wave filter crystal,Murata,DigiKey,1,pcs,14808-60-7
+56,1,DIODE-SIC,Silicon carbide Schottky diode,Infineon,DigiKey,2,pcs,409-21-2
+57,1,TRANSISTOR-GAAS,Gallium arsenide RF transistor,Qorvo,DigiKey,1,pcs,1303-00-0
+58,1,POWER-IC-GAN,Gallium nitride power IC,Navitas,DigiKey,1,pcs,25617-97-4
+59,1,OPTO-ISOLATOR,Optocoupler LED/phototransistor,ON Semi,DigiKey,2,pcs,7440-21-3
+60,1,VARISTOR-ZNO,Zinc oxide varistor 14mm,Bourns,DigiKey,2,pcs,1314-13-2

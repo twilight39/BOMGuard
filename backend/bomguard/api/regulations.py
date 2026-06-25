@@ -24,17 +24,6 @@ async def list_regulations(db: Session = Depends(get_db)) -> list[RegulationSche
     return [RegulationSchema.model_validate(r) for r in regs]
 
 
-@router.get("/{regulation_id}", response_model=RegulationSchema)
-async def get_regulation(regulation_id: str, db: Session = Depends(get_db)) -> RegulationSchema:
-    """Get regulation details and ML status."""
-    from bomguard.models.database import Regulation
-
-    reg = db.query(Regulation).filter_by(id=regulation_id).first()
-    if not reg:
-        raise HTTPException(status_code=404, detail="Regulation not found")
-    return RegulationSchema.model_validate(reg)
-
-
 @router.get("/feed")
 async def regulatory_feed(
     regulation_id: str | None = Query(None, description="Filter by regulation ID"),
@@ -62,6 +51,31 @@ async def regulatory_feed(
     ]
 
 
+@router.websocket("/ws")
+async def regulations_websocket(websocket: WebSocket) -> None:
+    """Real-time regulatory change alerts."""
+    await ws_manager.connect(websocket)
+    try:
+        while True:
+            # Keep connection alive; clients can send ping/keepalive
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_text("pong")
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket)
+
+
+@router.get("/{regulation_id}", response_model=RegulationSchema)
+async def get_regulation(regulation_id: str, db: Session = Depends(get_db)) -> RegulationSchema:
+    """Get regulation details and ML status."""
+    from bomguard.models.database import Regulation
+
+    reg = db.query(Regulation).filter_by(id=regulation_id).first()
+    if not reg:
+        raise HTTPException(status_code=404, detail="Regulation not found")
+    return RegulationSchema.model_validate(reg)
+
+
 @router.post("/{regulation_id}/refresh")
 async def refresh_regulation(regulation_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
     """Manually trigger a scraper refresh for a regulation."""
@@ -79,17 +93,3 @@ async def refresh_regulation(regulation_id: str, db: Session = Depends(get_db)) 
         "statuses_created": result.statuses_created,
         "changes_detected": result.changes_detected,
     }
-
-
-@router.websocket("/ws")
-async def regulations_websocket(websocket: WebSocket) -> None:
-    """Real-time regulatory change alerts."""
-    await ws_manager.connect(websocket)
-    try:
-        while True:
-            # Keep connection alive; clients can send ping/keepalive
-            data = await websocket.receive_text()
-            if data == "ping":
-                await websocket.send_text("pong")
-    except WebSocketDisconnect:
-        ws_manager.disconnect(websocket)
