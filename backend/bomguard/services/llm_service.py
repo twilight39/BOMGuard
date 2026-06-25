@@ -115,9 +115,19 @@ class RegulatoryLLMService:
         """Async wrapper for similarity search."""
         return await asyncio.to_thread(self._search_similar_sync, db, query_embedding, k)
 
-    def _build_context(self, summaries: list[RegulatorySummary]) -> str:
-        """Build a context string from retrieved summaries."""
+    def _build_context(
+        self,
+        summaries: list[RegulatorySummary],
+        ml_alerts: list[dict[str, Any]] | None = None,
+    ) -> str:
+        """Build a context string from retrieved summaries and optional ML alerts."""
         parts: list[str] = []
+        if ml_alerts:
+            alert_lines = [
+                f"- {a['cas_number']} ({a['substance_name']}): {a['risk_tier']} risk under {a['regulation_id']} (score {a['risk_score']:.2f})"
+                for a in ml_alerts
+            ]
+            parts.append("ML-Predicted Risk Alerts:\n" + "\n".join(alert_lines))
         for i, s in enumerate(summaries, 1):
             parts.append(f"[{i}] {s.summary_text}")
         return "\n\n".join(parts)
@@ -140,12 +150,16 @@ class RegulatoryLLMService:
         return messages
 
     async def ask(
-        self, db: Session, question: str, model: str = "google/gemini-2.5-flash"
+        self,
+        db: Session,
+        question: str,
+        model: str = "google/gemini-2.5-flash",
+        ml_alerts: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         """RAG-based Q&A over regulatory summaries."""
         query_embedding = await self._embed(question)
         summaries = await self._search_similar(db, query_embedding, k=5)
-        context = self._build_context(summaries)
+        context = self._build_context(summaries, ml_alerts=ml_alerts)
         messages = self._build_messages(question, context)
         answer = await self.openrouter.chat(messages=messages, model=model)
         return {
@@ -167,10 +181,11 @@ class RegulatoryLLMService:
         question: str,
         history: list[dict[str, str]] | None = None,
         model: str = "google/gemini-2.5-flash",
+        ml_alerts: list[dict[str, Any]] | None = None,
     ) -> tuple[list[dict[str, str]], list[RegulatorySummary]]:
         """Prepare a streaming RAG response. Returns messages array and summaries."""
         query_embedding = await self._embed(question)
         summaries = await self._search_similar(db, query_embedding, k=5)
-        context = self._build_context(summaries)
+        context = self._build_context(summaries, ml_alerts=ml_alerts)
         messages = self._build_messages(question, context, history)
         return messages, summaries

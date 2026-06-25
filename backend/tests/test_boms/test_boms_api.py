@@ -119,7 +119,7 @@ def test_delete_bom_not_found(db: Session) -> None:
     assert response.status_code == 404
 
 
-def test_upload_csv_creates_substances(db: Session) -> None:
+def test_upload_csv_creates_substances(db: Session, seed_regulation: object) -> None:
     """Uploading a BOM with CAS numbers creates Substance rows and statuses."""
     data, name = _csv_file(pd.DataFrame({
         "Part Number": ["R1"],

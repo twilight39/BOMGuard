@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useParams, useNavigate } from '@tanstack/react-router'
+import { useParams, useNavigate, Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { fetchBom, triggerScan, fetchScanResults } from '@/services/api'
 import type { BomDetail, ScanResult } from '@/types'
 import { useAgGridTheme } from '@/hooks/useAgGridTheme'
 import { RiskBadge, RegulationBadge } from '@/components/scan-result/RiskBadge'
+import { MlRiskBadge, MlRiskScore } from '@/components/scan-result/MlRiskBadge'
 import { ScanResultDetail } from '@/components/scan-result/ScanResultDetail'
 import { AgGridReact } from 'ag-grid-react'
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
@@ -12,7 +13,16 @@ import type { ColDef, GridApi } from 'ag-grid-community'
 
 ModuleRegistry.registerModules([AllCommunityModule])
 
-type ColumnKey = 'partNumber' | 'partDescription' | 'casNumber' | 'regulationId' | 'severity' | 'riskScore' | 'hitType'
+type ColumnKey =
+  | 'partNumber'
+  | 'partDescription'
+  | 'casNumber'
+  | 'regulationId'
+  | 'severity'
+  | 'riskScore'
+  | 'hitType'
+  | 'mlRiskScore'
+  | 'mlRiskTier'
 
 const DEFAULT_VISIBLE: ColumnKey[] = [
   'partNumber',
@@ -20,7 +30,7 @@ const DEFAULT_VISIBLE: ColumnKey[] = [
   'casNumber',
   'regulationId',
   'severity',
-  'riskScore',
+  'mlRiskTier',
   'hitType',
 ]
 
@@ -32,6 +42,8 @@ const COLUMN_LABELS: Record<ColumnKey, string> = {
   severity: 'Severity',
   riskScore: 'Risk Score',
   hitType: 'Hit Type',
+  mlRiskScore: 'ML Risk Score',
+  mlRiskTier: 'ML Risk Tier',
 }
 
 export function ScanResultPage() {
@@ -131,6 +143,18 @@ export function ScanResultPage() {
         cellClass: (p) =>
           p.value === 'unknown_cas' ? 'text-yellow-600 dark:text-yellow-400 italic' : '',
       },
+      {
+        headerName: 'ML Risk Tier',
+        field: 'mlRiskTier',
+        width: 130,
+        cellRenderer: (p: { value?: string | null }) => <MlRiskBadge tier={p.value} />,
+      },
+      {
+        headerName: 'ML Risk Score',
+        field: 'mlRiskScore',
+        width: 130,
+        cellRenderer: (p: { value?: number | null }) => <MlRiskScore score={p.value} />,
+      },
     ],
     []
   )
@@ -207,6 +231,9 @@ export function ScanResultPage() {
           <Button variant="outline" onClick={() => navigate({ to: `/boms/${bom.id}` })}>
             Back to BOM
           </Button>
+          <Link to="/ask" search={{ bomId: bom.id }}>
+            <Button variant="secondary">Ask AI about this BOM</Button>
+          </Link>
           <Button onClick={handleScan} disabled={scanning}>
             {scanning ? (
               <span className="inline-flex items-center gap-2">
@@ -253,6 +280,11 @@ export function ScanResultPage() {
               rowData={results}
               columnDefs={columnDefs}
               getRowId={(params) => String(params.data.id)}
+              getRowClass={(params) =>
+                params.data?.mlRiskTier === 'high'
+                  ? 'bg-purple-50/50 dark:bg-purple-950/20'
+                  : ''
+              }
               onGridReady={(params) => {
                 gridApiRef.current = params.api
               }}

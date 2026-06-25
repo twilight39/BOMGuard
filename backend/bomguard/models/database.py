@@ -232,6 +232,8 @@ class ScanResult(Base):
     hit_type: Mapped[str | None] = mapped_column(String(50))
     risk_score: Mapped[float | None] = mapped_column(Float)
     severity: Mapped[str | None] = mapped_column(String(20))
+    ml_risk_score: Mapped[float | None] = mapped_column(Float)
+    ml_risk_tier: Mapped[str | None] = mapped_column(String(20))
     details: Mapped[dict[str, Any] | None] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

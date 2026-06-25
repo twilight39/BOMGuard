@@ -73,6 +73,8 @@ class ScanResultSchema(BaseModel):
     hit_type: str | None = None
     risk_score: float | None = None
     severity: str | None = None
+    ml_risk_score: float | None = None
+    ml_risk_tier: str | None = None
     details: dict[str, Any] | None = None
 
 

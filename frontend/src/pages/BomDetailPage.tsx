@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useParams, useNavigate } from '@tanstack/react-router'
+import { useParams, useNavigate, Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { fetchBom, deleteBom, triggerScan, fetchScanResults } from '@/services/api'
 import type { BomDetail, BomPart, ScanResult } from '@/types'
@@ -151,6 +151,9 @@ export function BomDetailPage() {
               View Results ({scanResults.length})
             </Button>
           )}
+          <Link to="/ask" search={{ bomId: bom.id }}>
+            <Button variant="secondary">Ask AI</Button>
+          </Link>
           <Button variant="destructive" onClick={handleDelete}>
             Delete
           </Button>
@@ -174,6 +177,19 @@ export function BomDetailPage() {
                   : 'bg-muted',
               ].join(' ')}>
                 {sev}: {scanResults.filter((r) => r.severity === sev).length}
+              </span>
+            ))}
+            {Array.from(new Set(scanResults.map((r) => r.mlRiskTier).filter(Boolean))).sort().map((tier) => (
+              <span
+                key={`ml-${tier}`}
+                className={[
+                  'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium capitalize',
+                  tier === 'high'
+                    ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300'
+                    : 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+                ].join(' ')}
+              >
+                ML {tier}: {scanResults.filter((r) => r.mlRiskTier === tier).length}
               </span>
             ))}
           </div>

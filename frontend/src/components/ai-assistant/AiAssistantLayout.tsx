@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { Link } from '@tanstack/react-router'
 import { ChatInterface } from '@/components/ask/ChatInterface'
 import { fetchChatThreads, type ChatThread } from '@/services/api'
 
@@ -14,7 +15,11 @@ function getWsUrl(): string {
   return `${protocol}//${window.location.host}/api/ask/ws`
 }
 
-export function AiAssistantLayout() {
+interface AiAssistantLayoutProps {
+  bomId?: number
+}
+
+export function AiAssistantLayout({ bomId }: AiAssistantLayoutProps) {
   const [threads, setThreads] = React.useState<ChatThread[]>([])
   const [loading, setLoading] = React.useState(true)
   const [selectedThreadId, setSelectedThreadId] = React.useState<number | undefined>()
@@ -78,8 +83,29 @@ export function AiAssistantLayout() {
           </p>
         </div>
         <div className="flex-1 min-h-0 px-6 pb-6">
-          <div className="h-full rounded-xl border bg-card overflow-hidden">
-            <ChatInterface wsUrl={getWsUrl()} />
+          <div className="h-full rounded-xl border bg-card overflow-hidden flex flex-col">
+            {bomId && (
+              <div className="px-4 py-2 border-b bg-purple-50 dark:bg-purple-950/20 text-xs flex items-center justify-between">
+                <span className="text-purple-700 dark:text-purple-300">
+                  Chat is scoped to BOM #{bomId}. ML-predicted risk alerts are included.
+                </span>
+                <Link
+                  to="/boms/$bomId"
+                  params={{ bomId: String(bomId) }}
+                  className="underline hover:text-purple-600 dark:hover:text-purple-200"
+                >
+                  Back to BOM
+                </Link>
+              </div>
+            )}
+            <div className="flex-1 min-h-0">
+              <ChatInterface
+                key={selectedThreadId ?? 'new'}
+                wsUrl={getWsUrl()}
+                bomId={bomId}
+                threadId={selectedThreadId}
+              />
+            </div>
           </div>
         </div>
       </div>

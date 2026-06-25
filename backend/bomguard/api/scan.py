@@ -150,6 +150,8 @@ async def scan_result(
             hit_type=sr.hit_type,
             risk_score=sr.risk_score,
             severity=sr.severity,
+            ml_risk_score=sr.ml_risk_score,
+            ml_risk_tier=sr.ml_risk_tier,
             details=sr.details,
             part_number=bp.part_number if bp else None,
             part_description=bp.description if bp else None,

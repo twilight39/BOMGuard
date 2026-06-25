@@ -71,6 +71,13 @@ class RegulationModelRegistry:
             return None
         return artifact.get("metadata")
 
+    def get_metrics(self, regulation_id: str) -> dict[str, Any] | None:
+        """Return training metrics for a regulation."""
+        artifact = self.load_model(regulation_id)
+        if artifact is None:
+            return None
+        return artifact.get("metrics")
+
     def predict(self, regulation_id: str, feature_vector: pd.Series) -> dict[str, Any]:
         """Predict risk for a substance under a regulation.
 

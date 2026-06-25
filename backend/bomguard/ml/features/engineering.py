@@ -58,3 +58,32 @@ class FeatureEngineeringPipeline:
                     features[f"fp_pca_{i}"] = val
 
         return pd.Series(features)
+
+
+def build_ml_feature_vector(props: SubstanceProperties | None) -> pd.Series:
+    """Build a feature vector matching the columns used by RegulationModelRegistry.
+
+    Falls back to zeros for any missing descriptor or fingerprint component so
+    that substances without enrichment can still receive an ML risk score.
+    """
+    rec: dict[str, Any] = {
+        "molecular_weight": getattr(props, "molecular_weight", None),
+        "logp": getattr(props, "logp", None),
+        "hbd": getattr(props, "hbd", None),
+        "hba": getattr(props, "hba", None),
+        "tpsa": getattr(props, "tpsa", None),
+        "rotatable_bonds": getattr(props, "rotatable_bonds", None),
+        "aromatic_rings": getattr(props, "aromatic_rings", None),
+        "heavy_atoms": getattr(props, "heavy_atoms", None),
+        "has_smiles": float(getattr(props, "has_smiles", False) or 0),
+        "has_epa_data": float(getattr(props, "has_epa_data", False) or 0),
+    }
+
+    if props and props.morgan_fp_pca_50:
+        for i, val in enumerate(props.morgan_fp_pca_50):
+            rec[f"fp_pca_{i}"] = val
+
+    for i in range(50):
+        rec.setdefault(f"fp_pca_{i}", 0.0)
+
+    return pd.Series(rec).fillna(0.0)

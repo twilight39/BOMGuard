@@ -7,7 +7,9 @@ export function Navbar() {
         BOMGuard
       </Link>
       <div className="flex gap-4 text-sm text-muted-foreground">
-        <Link to="/ask">AI Assistant</Link>
+        <Link to="/ask" search={{ bomId: undefined }}>
+          AI Assistant
+        </Link>
         <Link to="/admin/ml">Admin</Link>
       </div>
     </nav>

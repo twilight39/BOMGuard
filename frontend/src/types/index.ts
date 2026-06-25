@@ -38,6 +38,8 @@ export interface ScanResult {
   hitType?: string | null
   riskScore?: number | null
   severity?: string | null
+  mlRiskScore?: number | null
+  mlRiskTier?: string | null
   details?: Record<string, unknown> | null
   createdAt?: string | null
 }

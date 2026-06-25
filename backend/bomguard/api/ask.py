@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from bomguard.db import SessionLocal, get_db
 from bomguard.metrics import llm_queries_total
-from bomguard.models.database import ChatMessage, ChatThread
+from bomguard.models.database import ChatMessage, ChatThread, ScanResult, Substance
 from bomguard.services.llm_service import RegulatoryLLMService
 
 router = APIRouter(prefix="/api/ask", tags=["Ask"])
@@ -16,6 +16,35 @@ router = APIRouter(prefix="/api/ask", tags=["Ask"])
 def get_llm_service() -> RegulatoryLLMService:
     """Dependency factory for the LLM service."""
     return RegulatoryLLMService()
+
+
+def _load_ml_alerts(db: Session, bom_id: Any) -> list[dict[str, Any]]:
+    """Load ML-predicted high/medium risk substances for a BOM."""
+    if bom_id is None:
+        return []
+    try:
+        bom_id_int = int(bom_id)
+    except (TypeError, ValueError):
+        return []
+    rows = (
+        db.query(ScanResult, Substance)
+        .join(Substance, ScanResult.cas_number == Substance.cas_number)
+        .filter(ScanResult.bom_id == bom_id_int)
+        .filter(ScanResult.hit_type == "ml_risk_prediction")
+        .filter(ScanResult.ml_risk_tier.in_(["high", "medium"]))
+        .all()
+    )
+    return [
+        {
+            "cas_number": sr.cas_number,
+            "substance_name": substance.name,
+            "regulation_id": sr.regulation_id,
+            "risk_score": sr.ml_risk_score,
+            "risk_tier": sr.ml_risk_tier,
+        }
+        for sr, substance in rows
+        if sr.cas_number is not None
+    ]
 
 
 @router.post("/")
@@ -29,7 +58,8 @@ async def ask_question(
     if not question:
         return {"answer": "No question provided.", "sources": []}
     llm_queries_total.labels(type="rest").inc()
-    return await llm.ask(db, question)
+    ml_alerts = _load_ml_alerts(db, request.get("bom_id"))
+    return await llm.ask(db, question, ml_alerts=ml_alerts)
 
 
 @router.websocket("/ws")
@@ -119,7 +149,10 @@ async def ask_websocket(websocket: WebSocket) -> None:
                     db.commit()
 
                 # Build prompt with history and stream
-                messages, summaries = await llm.ask_stream(db, question, history=history)
+                ml_alerts = _load_ml_alerts(db, message.get("bom_id"))
+                messages, summaries = await llm.ask_stream(
+                    db, question, history=history, ml_alerts=ml_alerts
+                )
                 assistant_content = ""
                 async for token in llm.openrouter.chat_stream(messages=messages):
                     await websocket.send_json({"type": "token", "content": token})

@@ -31,6 +31,8 @@ export interface Message {
 
 interface ChatInterfaceProps {
   wsUrl: string
+  bomId?: number
+  threadId?: number
 }
 
 const STARTER_QUESTIONS = [
@@ -106,12 +108,12 @@ function markSynced() {
   localStorage.setItem(LS_SYNCED_KEY, '1')
 }
 
-export function ChatInterface({ wsUrl }: ChatInterfaceProps) {
+export function ChatInterface({ wsUrl, bomId, threadId: externalThreadId }: ChatInterfaceProps) {
   const [messages, setMessages] = React.useState<Message[]>([])
   const [input, setInput] = React.useState('')
   const [loading, setLoading] = React.useState(false)
   const [connected, setConnected] = React.useState(false)
-  const [threadId, setThreadId] = React.useState<number | undefined>()
+  const [threadId, setThreadId] = React.useState<number | undefined>(externalThreadId)
   const [authUserId, setAuthUserId] = React.useState<string | null>(null)
   const [showSyncBanner, setShowSyncBanner] = React.useState(false)
   const bottomRef = React.useRef<HTMLDivElement>(null)
@@ -131,21 +133,29 @@ export function ChatInterface({ wsUrl }: ChatInterfaceProps) {
 
       if (user) {
         setAuthUserId(user.id)
-        const threads = await fetchChatThreads()
-        if (cancelled) return
 
-        if (threads.length > 0) {
-          // Load the single persistent thread
-          const singleThread = threads[0]
-          setThreadId(singleThread.id)
-          const dbMsgs = await fetchChatMessages(singleThread.id)
+        if (externalThreadId) {
+          // Parent selected a specific thread
+          const dbMsgs = await fetchChatMessages(externalThreadId)
           if (cancelled) return
           setMessages(dbToLocal(dbMsgs))
         } else {
-          // No thread yet — check for anonymous messages to sync
-          const localMsgs = loadLocal()
-          if (localMsgs.length > 0 && !wasSynced()) {
-            setShowSyncBanner(true)
+          const threads = await fetchChatThreads()
+          if (cancelled) return
+
+          if (threads.length > 0) {
+            // Load the single persistent thread
+            const singleThread = threads[0]
+            setThreadId(singleThread.id)
+            const dbMsgs = await fetchChatMessages(singleThread.id)
+            if (cancelled) return
+            setMessages(dbToLocal(dbMsgs))
+          } else {
+            // No thread yet — check for anonymous messages to sync
+            const localMsgs = loadLocal()
+            if (localMsgs.length > 0 && !wasSynced()) {
+              setShowSyncBanner(true)
+            }
           }
         }
       } else {
@@ -158,7 +168,7 @@ export function ChatInterface({ wsUrl }: ChatInterfaceProps) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [externalThreadId])
 
   // Persist anonymous messages to localStorage
   React.useEffect(() => {
@@ -237,10 +247,14 @@ export function ChatInterface({ wsUrl }: ChatInterfaceProps) {
       setLoading(true)
 
       wsRef.current?.send(
-        JSON.stringify({ question, thread_id: threadId ?? null })
+        JSON.stringify({
+          question,
+          thread_id: threadId ?? null,
+          bom_id: bomId ?? null,
+        })
       )
     },
-    [loading, connected, threadId]
+    [loading, connected, threadId, bomId]
   )
 
   const handleSend = () => {
